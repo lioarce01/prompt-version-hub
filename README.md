@@ -1,10 +1,8 @@
-prompt-version-hub
+# The platform to version, test, and deploy prompts with confidence
 
-La plataforma para versionar, probar y desplegar prompts con confianza.
-
-¿Qué hace?
-- Centraliza tus prompts con versionado automático, diff tipo git y rollback en un clic.
-- Despliega por entornos (dev/staging/prod) con historial claro de releases.
-- Ejecuta A/B testing determinista por segmentos y mide el rendimiento por versión.
-- Traza uso y resultados (éxito, latencia, coste) para optimizar calidad y gasto.
-- Control de acceso con JWT y roles (admin/editor/viewer) y SDKs listos (Python/JS).
+## What it does
+- Centralizes your prompts with automatic versioning, Git-style diffs, and one-click rollback.  
+- Deploys across environments (dev/staging/prod) with a clear release history.  
+- Runs deterministic A/B testing by segments and tracks performance per version.  
+- Traces usage and outcomes (success, latency, cost) to optimize quality and spending.  
+- Provides access control with JWT and role-based permissions (admin/editor/viewer), plus ready-to-use SDKs (Python/JS).
