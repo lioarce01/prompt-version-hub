@@ -15,8 +15,12 @@ class UsageIn(BaseModel):
 class UsageOut(BaseModel):
     id: int
     prompt_id: int
-    created_at: datetime
+    user_id: Optional[str] = None
+    output: Optional[str] = None
     success: bool
+    latency_ms: Optional[int] = None
+    cost: Optional[int] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True
