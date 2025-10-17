@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Header } from "@/components/layout/Header";
+import { Sidebar } from "@/components/layout/Sidebar";
 
 export default function DashboardLayout({
   children,
@@ -12,35 +12,45 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, token, logout } = useAuth();
+  const { isAuthenticated, token } = useAuth();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (!isAuthenticated && !token) {
-      router.push("/login");
-    }
+    // Check if user is authenticated
+    const checkAuth = () => {
+      if (!isAuthenticated && !token) {
+        router.replace("/login");
+      } else {
+        setIsChecking(false);
+      }
+    };
+
+    // Small delay to allow token to be restored from localStorage
+    const timer = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, token, router]);
 
-  // Show nothing while checking auth
-  if (!isAuthenticated && !token) {
-    return null;
+  // Show loading while checking authentication
+  if (isChecking || (!isAuthenticated && !token)) {
+    return (
+      <div className="min-h-screen bg-background dark flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Simple Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/dashboard">
-            <h1 className="text-xl font-semibold">Prompt Version Hub</h1>
-          </Link>
-          <Button variant="ghost" size="sm" onClick={logout}>
-            Logout
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background dark">
+      <Header />
+      <Sidebar />
 
-      <main className="container mx-auto px-6 py-8">{children}</main>
+      {/* Main content with offset for header and sidebar */}
+      <main className="ml-64 mt-14 min-h-[calc(100vh-3.5rem)]">
+        <div className="p-8">{children}</div>
+      </main>
     </div>
   );
 }

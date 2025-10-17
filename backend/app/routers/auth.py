@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User, RoleEnum
 from ..schemas import UserCreate, UserOut, TokenOut
-from ..utils.security import get_password_hash, verify_password, create_access_token
+from ..utils.security import get_password_hash, verify_password, create_access_token, get_current_user
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -28,3 +28,9 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
         raise HTTPException(status_code=400, detail="Invalid credentials")
     token = create_access_token({"sub": str(user.id), "role": user.role.value})
     return TokenOut(access_token=token)
+
+
+@router.get("/me", response_model=UserOut)
+def get_me(current_user: User = Depends(get_current_user)):
+    """Get current authenticated user information"""
+    return current_user

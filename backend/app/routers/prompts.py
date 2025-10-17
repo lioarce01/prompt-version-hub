@@ -59,12 +59,33 @@ def create_prompt(payload: PromptCreate, db: Session = Depends(get_db), user=Dep
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/{name}", response_model=PromptOut)
+def get_prompt(name: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Get the active version of a prompt by name"""
+    prompt = svc.get_active_prompt(db, name)
+    if not prompt:
+        raise HTTPException(status_code=404, detail="Prompt not found")
+    return prompt
+
+
 @router.put("/{name}", response_model=PromptOut, dependencies=[Depends(require_roles(RoleEnum.admin, RoleEnum.editor))])
 def update_prompt(name: str, payload: PromptUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
         return svc.update_prompt(db, name, user.id, payload)
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{name}", dependencies=[Depends(require_roles(RoleEnum.admin))])
+def delete_prompt(name: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Delete all versions of a prompt (admin only)"""
+    try:
+        deleted_count = svc.delete_prompt(db, name)
+        if deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Prompt not found")
+        return {"success": True, "deleted_versions": deleted_count}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/{name}/versions", response_model=PromptListOut)

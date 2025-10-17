@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
-import { logout, restoreSession } from "@/features/auth/authSlice";
+import { logout, setUser } from "@/features/auth/authSlice";
 import { useGetCurrentUserQuery } from "@/features/auth/authApi";
 
 export function useAuth() {
@@ -13,28 +13,26 @@ export function useAuth() {
     (state) => state.auth
   );
 
-  // Fetch current user if we have a token but no user data
-  const { data: currentUser } = useGetCurrentUserQuery(undefined, {
-    skip: !token || !!user,
+  // Fetch user data when we have a token but no user info
+  const { data: userData, isError } = useGetCurrentUserQuery(undefined, {
+    skip: !token || !!user, // Skip if no token or user already loaded
   });
 
-  // Update user data when fetched
+  // Update Redux state when user data is fetched
   useEffect(() => {
-    if (currentUser && !user) {
-      // User data fetched successfully
-      // The user state will be updated via setCredentials elsewhere if needed
+    if (userData && !user) {
+      dispatch(setUser(userData));
     }
-  }, [currentUser, user]);
+  }, [userData, user, dispatch]);
 
-  // Restore session from localStorage on mount
+  // Handle auth errors (expired token, invalid token)
   useEffect(() => {
-    if (!isAuthenticated) {
-      const storedToken = localStorage.getItem("token");
-      if (storedToken) {
-        dispatch(restoreSession({ token: storedToken }));
-      }
+    if (isError && token) {
+      // Token is invalid or expired, logout
+      dispatch(logout());
+      router.push("/login");
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isError, token, dispatch, router]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -42,7 +40,7 @@ export function useAuth() {
   };
 
   return {
-    user: currentUser || user,
+    user,
     token,
     isAuthenticated,
     logout: handleLogout,

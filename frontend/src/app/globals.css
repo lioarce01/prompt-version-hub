@@ -100,12 +100,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* {
-  border-color: hsl(var(--border));
-}
 
 body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
+  scrollbar-gutter: stable;
 }

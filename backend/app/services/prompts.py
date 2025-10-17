@@ -56,6 +56,27 @@ def get_version(db: Session, name: str, version: int) -> Prompt | None:
     return db.query(Prompt).filter(Prompt.name == name, Prompt.version == version).first()
 
 
+def get_active_prompt(db: Session, name: str) -> Prompt | None:
+    """Get the active version of a prompt by name"""
+    return db.query(Prompt).filter(Prompt.name == name, Prompt.active == True).first()
+
+
+def delete_prompt(db: Session, name: str) -> int:
+    """Delete all versions of a prompt by name. Returns count of deleted versions."""
+    from ..models import Deployment
+
+    # Check if there are any deployments referencing this prompt
+    prompt_ids = [p.id for p in db.query(Prompt.id).filter(Prompt.name == name).all()]
+    if prompt_ids:
+        has_deployments = db.query(Deployment).filter(Deployment.prompt_id.in_(prompt_ids)).first()
+        if has_deployments:
+            raise ValueError("Cannot delete prompt with existing deployments. Remove deployments first.")
+
+    deleted_count = db.query(Prompt).filter(Prompt.name == name).delete(synchronize_session=False)
+    db.commit()
+    return deleted_count
+
+
 def rollback(db: Session, name: str, target_version: int, user_id: int) -> Prompt:
     target = get_version(db, name, target_version)
     if not target:

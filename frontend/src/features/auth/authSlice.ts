@@ -24,23 +24,20 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.isAuthenticated = true;
-      // Persist token to localStorage
-      localStorage.setItem("token", action.payload.token);
+      // redux-persist handles localStorage automatically
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
-      // Clear token from localStorage
-      localStorage.removeItem("token");
+      // redux-persist handles localStorage automatically
     },
-    // Restore session from localStorage on app init
-    restoreSession: (state, action: PayloadAction<{ token: string }>) => {
-      state.token = action.payload.token;
-      state.isAuthenticated = true;
+    // Update user info (called after /auth/me)
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
     },
   },
 });
 
-export const { setCredentials, logout, restoreSession } = authSlice.actions;
+export const { setCredentials, logout, setUser } = authSlice.actions;
 export default authSlice.reducer;

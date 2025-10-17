@@ -20,6 +20,31 @@ export interface UpdatePromptRequest {
   variables: string[];
 }
 
+export interface PromptVersion {
+  id: number;
+  name: string;
+  template: string;
+  variables: string[];
+  version: number;
+  created_by: number;
+  created_at: string;
+  active: boolean;
+}
+
+export interface PromptListResponse {
+  items: Prompt[];
+  limit: number;
+  offset: number;
+  count: number;
+  has_next: boolean;
+}
+
+export interface PromptDiffResponse {
+  from_version: number;
+  to_version: number;
+  diff: string;
+}
+
 export interface DiffResponse {
   from_version: number;
   to_version: number;

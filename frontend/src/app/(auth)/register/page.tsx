@@ -53,21 +53,20 @@ export default function RegisterPage() {
     try {
       const result = await register({ email, password }).unwrap();
 
-      // Store credentials in Redux + localStorage
+      // Store token in Redux (redux-persist handles localStorage)
+      // User info will be fetched by useAuth hook via /auth/me
       dispatch(
         setCredentials({
-          user: {
-            id: 0, // Will be fetched from /auth/me
-            email,
-            role: "viewer", // Default role
-            created_at: new Date().toISOString(),
-          },
+          user: null as any, // Will be fetched from /auth/me by useAuth hook
           token: result.access_token,
         })
       );
 
-      toast.success("Registration successful!");
+      toast.success("Registration successful! Redirecting...");
+
+      // Redirect to dashboard
       router.push("/");
+      router.refresh();
     } catch (err: any) {
       const message =
         err?.data?.detail || "Registration failed. Please try again.";
