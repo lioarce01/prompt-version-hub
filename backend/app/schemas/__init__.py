@@ -4,6 +4,19 @@ from .prompt import PromptBase, PromptCreate, PromptUpdate, PromptOut, DiffOut, 
 from .deployment import DeploymentCreate, DeploymentOut, DeploymentListOut
 from .ab import ABPolicyIn, ABPolicyOut, ABAssignIn, ABAssignOut
 from .usage import UsageIn, UsageOut, AnalyticsByVersion, AnalyticsListOut
+from .kpis import (
+    TotalsSummary,
+    SummaryOut,
+    UsageTrendPoint,
+    UsageTrendOut,
+    VersionVelocityPoint,
+    VersionVelocityOut,
+    TopPromptItem,
+    TopPromptsOut,
+    ExperimentArm,
+    ExperimentItem,
+    ExperimentsOut,
+)
 
 __all__ = [
     "UserCreate",
@@ -26,5 +39,16 @@ __all__ = [
     "UsageOut",
     "AnalyticsByVersion",
     "AnalyticsListOut",
+    "TotalsSummary",
+    "SummaryOut",
+    "UsageTrendPoint",
+    "UsageTrendOut",
+    "VersionVelocityPoint",
+    "VersionVelocityOut",
+    "TopPromptItem",
+    "TopPromptsOut",
+    "ExperimentArm",
+    "ExperimentItem",
+    "ExperimentsOut",
 ]
 
