@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import type { UserRole } from "@/types/api";
@@ -256,9 +257,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
       {user && (
         <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
-          <DialogContent className="bg-[#0a0a0a]">
+          <DialogContent className="bg-background border-border">
             <DialogHeader>
-              <DialogTitle className="text-white">Profile Settings</DialogTitle>
+              <DialogTitle className="text-foreground">Profile Settings</DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 Manage your account settings and preferences
               </DialogDescription>
@@ -271,7 +272,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold text-white">{user.email}</h3>
+                  <h3 className="font-semibold text-foreground">{user.email}</h3>
                   <Badge
                     variant="outline"
                     className={cn(
@@ -286,21 +287,28 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
               <div className="space-y-4">
                 <div className="border-t border-border/50 pt-4">
-                  <h4 className="mb-3 text-sm font-medium text-white">
+                  <h4 className="mb-3 text-sm font-medium text-foreground">
                     Account Information
                   </h4>
                   <div className="space-y-2.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Email:</span>
-                      <span className="text-white">{user.email}</span>
+                      <span className="text-foreground">{user.email}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Role:</span>
-                      <span className="text-white capitalize">
+                      <span className="text-foreground capitalize">
                         {role ?? "viewer"}
                       </span>
                     </div>
                   </div>
+                </div>
+
+                <div className="border-t border-border/50 pt-4">
+                  <h4 className="mb-3 text-sm font-medium text-foreground">
+                    Preferences
+                  </h4>
+                  <ThemeToggle />
                 </div>
               </div>
             </div>

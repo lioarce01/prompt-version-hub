@@ -153,3 +153,6 @@ docker-compose.override.yml
 *.tmp
 *.temp
 .cache/
+
+FRONTEND_ROADMAP.md
+planning.md

@@ -54,12 +54,14 @@ export default function DashboardLayout({
         onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
       />
 
-      <main
-        className="min-h-screen transition-[padding-left] duration-300 ease-in-out"
-        style={{ paddingLeft: sidebarWidth, paddingTop: 48 }}
+      <div
+        className="min-h-screen transition-[margin-left] duration-300 ease-in-out"
+        style={{ marginLeft: sidebarWidth }}
       >
-        <div className="min-h-screen px-8 pb-12 pt-0">{children}</div>
-      </main>
+        <main className="min-h-screen w-full max-w-7xl mx-auto px-8 pb-12 pt-12">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
