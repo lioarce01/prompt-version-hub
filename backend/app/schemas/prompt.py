@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 
@@ -7,6 +7,7 @@ class PromptBase(BaseModel):
     name: str
     template: str
     variables: List[str] = Field(default_factory=list)
+    is_public: bool = False
 
 
 class PromptCreate(PromptBase):
@@ -27,6 +28,7 @@ class PromptOut(BaseModel):
     created_by: int
     created_at: datetime
     active: bool
+    is_public: bool
 
     class Config:
         from_attributes = True
@@ -44,3 +46,11 @@ class PromptListOut(BaseModel):
     offset: int
     count: int
     has_next: bool
+
+
+class PromptVisibilityUpdate(BaseModel):
+    is_public: bool
+
+
+class PromptCloneRequest(BaseModel):
+    new_name: Optional[str] = None

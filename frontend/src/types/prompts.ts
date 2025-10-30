@@ -7,6 +7,7 @@ export interface Prompt {
   created_by: number;
   created_at: string;
   active: boolean;
+  is_public: boolean;
 }
 
 export interface CreatePromptRequest {
@@ -39,6 +40,14 @@ export interface PromptListResponse {
   has_next: boolean;
 }
 
+export interface PromptVersionListResponse {
+  items: PromptVersion[];
+  limit?: number;
+  offset?: number;
+  count?: number;
+  has_next?: boolean;
+}
+
 export interface PromptDiffResponse {
   from_version: number;
   to_version: number;
@@ -60,4 +69,14 @@ export interface PromptFilters {
   order?: "asc" | "desc";
   limit?: number;
   offset?: number;
+  visibility?: "all" | "public" | "private" | "owned";
+  owned?: boolean;
+}
+
+export interface PromptCloneRequest {
+  new_name?: string;
+}
+
+export interface PromptVisibilityRequest {
+  is_public: boolean;
 }

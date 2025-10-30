@@ -8,6 +8,8 @@ from .routers import deployments as deployments_router
 from .routers import ab as ab_router
 from .routers import usage as usage_router
 from .routers import kpis as kpis_router
+from .routers import ai as ai_router
+from .rate_limiter import init_rate_limiter
 
 
 def create_app() -> FastAPI:
@@ -27,12 +29,16 @@ def create_app() -> FastAPI:
     with SessionLocal() as db:
         ensure_admin_seed(db)
 
+    # Configure rate limiting
+    init_rate_limiter(app)
+
     app.include_router(auth_router.router)
     app.include_router(prompts_router.router)
     app.include_router(deployments_router.router)
     app.include_router(ab_router.router)
     app.include_router(usage_router.router)
     app.include_router(kpis_router.router)
+    app.include_router(ai_router.router)
 
     @app.get("/")
     def root():
@@ -42,4 +48,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

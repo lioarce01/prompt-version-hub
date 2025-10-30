@@ -14,9 +14,9 @@ class Prompt(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     active = Column(Boolean, default=True)
+    is_public = Column(Boolean, nullable=False, default=False)
 
     author = relationship("User")
     __table_args__ = (
         UniqueConstraint('name', 'version', name='uq_prompt_name_version'),
     )
-

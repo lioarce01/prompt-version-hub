@@ -3,6 +3,9 @@
 # ================================
 
 claude.md
+.claude/
+agents.md
+backend/migrations/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

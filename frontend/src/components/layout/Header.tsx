@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, Settings, ChevronDown } from "lucide-react";
+import type { UserRole } from "@/types/api";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -30,12 +31,13 @@ export function Header() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const getUserInitials = (email: string) => {
+  const getUserInitials = (email?: string) => {
+    if (!email) return "??";
     return email.substring(0, 2).toUpperCase();
   };
 
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
+  const getRoleBadgeClass = (userRole: UserRole | null) => {
+    switch (userRole) {
       case "admin":
         return "bg-red-500/10 text-red-400 border-red-500/20";
       case "editor":
@@ -86,7 +88,7 @@ export function Header() {
                       variant="outline"
                       className={`mt-1.5 w-fit text-xs capitalize font-normal ${getRoleBadgeClass(role)}`}
                     >
-                      {role}
+                      {role ?? "viewer"}
                     </Badge>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -133,7 +135,7 @@ export function Header() {
                   variant="outline"
                   className={`mt-1.5 capitalize font-normal ${getRoleBadgeClass(role)}`}
                 >
-                  {role}
+                  {role ?? "viewer"}
                 </Badge>
               </div>
             </div>
@@ -148,7 +150,7 @@ export function Header() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Role:</span>
-                    <span className="text-white capitalize">{role}</span>
+                    <span className="text-white capitalize">{role ?? "viewer"}</span>
                   </div>
                 </div>
               </div>

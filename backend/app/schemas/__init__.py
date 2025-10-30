@@ -1,7 +1,24 @@
 from .user import UserCreate, UserOut
 from .auth import TokenOut
-from .prompt import PromptBase, PromptCreate, PromptUpdate, PromptOut, DiffOut, PromptListOut
-from .deployment import DeploymentCreate, DeploymentOut, DeploymentListOut
+from .prompt import (
+    PromptBase,
+    PromptCreate,
+    PromptUpdate,
+    PromptOut,
+    DiffOut,
+    PromptListOut,
+    PromptVisibilityUpdate,
+    PromptCloneRequest,
+)
+from .deployment import (
+    DeploymentCreate,
+    DeploymentOut,
+    DeploymentListOut,
+    DeploymentWithInfo,
+    DeploymentListWithInfoOut,
+    PromptInfo,
+    UserInfo,
+)
 from .ab import ABPolicyIn, ABPolicyOut, ABAssignIn, ABAssignOut
 from .usage import UsageIn, UsageOut, AnalyticsByVersion, AnalyticsListOut
 from .kpis import (
@@ -17,6 +34,13 @@ from .kpis import (
     ExperimentItem,
     ExperimentsOut,
 )
+from .ai import (
+    PromptGenerationRequest,
+    PromptGenerationResponse,
+    PromptGenerationMetadata,
+    ToneEnum,
+    OutputFormatEnum,
+)
 
 __all__ = [
     "UserCreate",
@@ -28,9 +52,15 @@ __all__ = [
     "PromptOut",
     "PromptListOut",
     "DiffOut",
+    "PromptVisibilityUpdate",
+    "PromptCloneRequest",
     "DeploymentCreate",
     "DeploymentOut",
     "DeploymentListOut",
+    "DeploymentWithInfo",
+    "DeploymentListWithInfoOut",
+    "PromptInfo",
+    "UserInfo",
     "ABPolicyIn",
     "ABPolicyOut",
     "ABAssignIn",
@@ -50,5 +80,9 @@ __all__ = [
     "ExperimentArm",
     "ExperimentItem",
     "ExperimentsOut",
+    "PromptGenerationRequest",
+    "PromptGenerationResponse",
+    "PromptGenerationMetadata",
+    "ToneEnum",
+    "OutputFormatEnum",
 ]
-

@@ -9,16 +9,41 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
+  createTransform,
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { api } from "./api";
 import authReducer from "@/features/auth/authSlice";
+
+// Transform to ensure token is stored without extra quotes
+const tokenTransform = createTransform(
+  // Transform state on save (outbound)
+  (inboundState: any) => {
+    if (inboundState && typeof inboundState.token === "string") {
+      // Remove extra quotes if present
+      const cleanToken = inboundState.token.replace(/^"(.*)"$/, "$1");
+      return { ...inboundState, token: cleanToken };
+    }
+    return inboundState;
+  },
+  // Transform state on rehydration (inbound)
+  (outboundState: any) => {
+    if (outboundState && typeof outboundState.token === "string") {
+      // Remove extra quotes if present
+      const cleanToken = outboundState.token.replace(/^"(.*)"$/, "$1");
+      return { ...outboundState, token: cleanToken };
+    }
+    return outboundState;
+  },
+  { whitelist: ["auth"] }
+);
 
 // Persist configuration for auth slice
 const persistConfig = {
   key: "auth",
   storage,
   whitelist: ["token", "user", "isAuthenticated"], // Only persist these fields
+  transforms: [tokenTransform],
 };
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);

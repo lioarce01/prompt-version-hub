@@ -46,7 +46,7 @@ export default function LoginPage() {
       // User info will be fetched by useAuth hook via /auth/me
       dispatch(
         setCredentials({
-          user: null as any, // Will be fetched from /auth/me by useAuth hook
+          user: null, // Will be fetched from /auth/me by useAuth hook
           token: result.access_token,
         })
       );

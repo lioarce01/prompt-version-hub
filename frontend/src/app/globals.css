@@ -107,3 +107,26 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
   scrollbar-gutter: stable;
 }
+
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: hsl(var(--border));
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}

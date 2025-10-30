@@ -43,6 +43,17 @@ export function PromptCard({ prompt, onDelete }: PromptCardProps) {
             >
               <GitBranch className="w-3 h-3 mr-1" />v{prompt.version}
             </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-xs capitalize",
+                prompt.is_public
+                  ? "border-accent/40 text-accent"
+                  : "border-muted-foreground/40 text-muted-foreground",
+              )}
+            >
+              {prompt.is_public ? "Public" : "Private"}
+            </Badge>
             {prompt.active && (
               <Badge
                 variant="secondary"
@@ -82,11 +93,7 @@ export function PromptCard({ prompt, onDelete }: PromptCardProps) {
               {canEdit && (
                 <DropdownMenuItem asChild>
                   <Link
-                    href={
-                      prompt.active
-                        ? `/prompts/${prompt.name}`
-                        : `/prompts/${prompt.name}/versions/${prompt.version}`
-                    }
+                    href={`/prompts/${prompt.name}?edit=true`}
                     className="cursor-pointer"
                   >
                     <Edit className="mr-2 h-4 w-4" />
@@ -124,6 +131,9 @@ export function PromptCard({ prompt, onDelete }: PromptCardProps) {
             </span>
           )}
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Owner: User #{prompt.created_by}
+        </p>
       </CardContent>
     </Card>
   );

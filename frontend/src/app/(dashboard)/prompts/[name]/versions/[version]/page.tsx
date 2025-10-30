@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useGetVersionQuery } from "@/features/prompts/promptsApi";
+import { useGetVersionQuery, useGetVersionsQuery, useRollbackMutation } from "@/features/prompts/promptsApi";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +27,11 @@ import {
   Rocket,
   BarChart3,
   AlertTriangle,
+  RotateCcw,
+  CheckCircle2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 export default function PromptVersionPage() {
   const params = useParams();
@@ -42,6 +45,12 @@ export default function PromptVersionPage() {
     name: promptName,
     version: version,
   });
+  const {
+    data: versionsData,
+    isLoading: versionsLoading,
+    isError: versionsError,
+  } = useGetVersionsQuery(promptName);
+  const [rollback, { isLoading: isRollingBack }] = useRollbackMutation();
 
   if (isLoading) {
     return (
@@ -57,7 +66,7 @@ export default function PromptVersionPage() {
       <div className="max-w-[1400px]">
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
           <p className="text-destructive">Version not found</p>
-          <Link href="/">
+          <Link href="/prompts">
             <Button variant="outline" className="mt-4">
               Back to Prompts
             </Button>
@@ -67,13 +76,32 @@ export default function PromptVersionPage() {
     );
   }
 
+  const versions = versionsData?.items ?? [];
+
+  const handleRollback = async (targetVersion: number) => {
+    try {
+      const result = await rollback({
+        name: promptName,
+        version: targetVersion,
+      }).unwrap();
+      toast.success(
+        `Rolled back to version ${targetVersion}. New version ${result.version} created.`,
+      );
+      router.push(`/prompts/${promptName}`);
+    } catch (err: any) {
+      const message =
+        err?.data?.detail || "Failed to rollback. Please try again.";
+      toast.error(message);
+    }
+  };
+
   return (
     <div className="max-w-[1400px] space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <Link href="/">
+            <Link href="/prompts">
               <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -122,12 +150,21 @@ export default function PromptVersionPage() {
         {canEdit && (
           <div className="flex gap-2">
             <Button
-              onClick={() => router.push(`/prompts/${promptName}`)}
               className="gap-2"
+              onClick={() => router.push(`/prompts/${promptName}?edit=true`)}
             >
               <Edit className="h-4 w-4" />
-              View Active Version
+              Edit Prompt
             </Button>
+            {!prompt.active && (
+              <Button
+                onClick={() => router.push(`/prompts/${promptName}`)}
+                className="gap-2"
+              >
+                <GitBranch className="h-4 w-4" />
+                View Active Version
+              </Button>
+            )}
             <Button
               variant="outline"
               className="gap-2 text-muted-foreground hover:text-foreground"
@@ -233,9 +270,92 @@ export default function PromptVersionPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                Version history will be implemented in Phase 3
-              </div>
+              {versionsLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-20 w-full bg-secondary/20" />
+                  <Skeleton className="h-20 w-full bg-secondary/20" />
+                  <Skeleton className="h-20 w-full bg-secondary/20" />
+                </div>
+              ) : versionsError ? (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-6 text-center text-destructive">
+                  Failed to load version history.
+                </div>
+              ) : versions.length > 0 ? (
+                <div className="space-y-3">
+                  {versions.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4 transition-colors hover:bg-background/80"
+                    >
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="bg-secondary/50 text-muted-foreground"
+                          >
+                            <GitBranch className="mr-1 h-3 w-3" />
+                            v{item.version}
+                          </Badge>
+                          {item.active && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-success/10 text-success border-success/20"
+                            >
+                              <CheckCircle2 className="mr-1 h-3 w-3" />
+                              Active
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="mb-2 line-clamp-2 font-mono text-sm text-muted-foreground">
+                          {item.template}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDistanceToNow(new Date(item.created_at), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            User #{item.created_by}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4 flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            router.push(
+                              `/prompts/${promptName}/versions/${item.version}`,
+                            )
+                          }
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          View
+                        </Button>
+                        {canEdit && !item.active && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRollback(item.version)}
+                            disabled={isRollingBack}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <RotateCcw className="mr-1 h-3 w-3" />
+                            Rollback
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-muted-foreground">
+                  No versions found
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

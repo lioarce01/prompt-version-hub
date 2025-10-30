@@ -3,18 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   FileText,
   Rocket,
   TestTube,
-  BarChart3,
+  Sparkles,
+  UserSquare2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   {
-    name: "Prompts",
+    name: "Dashboard",
     href: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Prompts",
+    href: "/prompts",
     icon: FileText,
+  },
+  {
+    name: "My Prompts",
+    href: "/prompts/my",
+    icon: UserSquare2,
   },
   {
     name: "Deployments",
@@ -27,9 +39,9 @@ const navigation = [
     icon: TestTube,
   },
   {
-    name: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
+    name: "AI Generator",
+    href: "/ai-generator",
+    icon: Sparkles,
   },
 ];
 

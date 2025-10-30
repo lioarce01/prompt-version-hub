@@ -85,7 +85,7 @@ export default function NewPromptPage() {
     <div className="max-w-[1400px] space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/">
+        <Link href="/prompts">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -203,7 +203,7 @@ export default function NewPromptPage() {
                 <Save className="h-4 w-4" />
                 {isLoading ? "Creating..." : "Create Prompt"}
               </Button>
-              <Link href="/">
+              <Link href="/prompts">
                 <Button type="button" variant="outline" disabled={isLoading}>
                   Cancel
                 </Button>

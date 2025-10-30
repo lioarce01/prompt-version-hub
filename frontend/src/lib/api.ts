@@ -5,8 +5,16 @@ const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   prepareHeaders: (headers, { getState }) => {
     // Get token from Redux store (preferred) or localStorage (fallback)
-    const token =
-      (getState() as RootState).auth.token || localStorage.getItem("token");
+    const stateToken = (getState() as RootState).auth.token;
+    const browserToken =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    let token = stateToken || browserToken;
+
+    // Fix: Remove extra quotes from token if present (redux-persist sometimes double-serializes)
+    if (token && typeof token === "string") {
+      // Remove surrounding quotes if they exist
+      token = token.replace(/^"(.*)"$/, "$1");
+    }
 
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);

@@ -39,6 +39,8 @@ export function PromptTable({ prompts, onDelete }: PromptTableProps) {
               <TableHead>Name</TableHead>
               <TableHead>Template</TableHead>
               <TableHead>Version</TableHead>
+              <TableHead>Visibility</TableHead>
+              <TableHead>Owner</TableHead>
               <TableHead>Variables</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-[70px]"></TableHead>
@@ -47,7 +49,7 @@ export function PromptTable({ prompts, onDelete }: PromptTableProps) {
           <TableBody>
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={8}
                 className="h-24 text-center text-muted-foreground"
               >
                 No prompts found
@@ -67,6 +69,8 @@ export function PromptTable({ prompts, onDelete }: PromptTableProps) {
             <TableHead className="text-muted-foreground">Name</TableHead>
             <TableHead className="text-muted-foreground">Template</TableHead>
             <TableHead className="text-muted-foreground">Version</TableHead>
+            <TableHead className="text-muted-foreground">Visibility</TableHead>
+            <TableHead className="text-muted-foreground">Owner</TableHead>
             <TableHead className="text-muted-foreground">Variables</TableHead>
             <TableHead className="text-muted-foreground">Created</TableHead>
             <TableHead className="w-[70px]"></TableHead>
@@ -106,6 +110,21 @@ export function PromptTable({ prompts, onDelete }: PromptTableProps) {
                 >
                   <GitBranch className="w-3 h-3 mr-1" />v{prompt.version}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge
+                  variant="outline"
+                  className={
+                    prompt.is_public
+                      ? "text-xs border-accent/40 text-accent"
+                      : "text-xs border-muted-foreground/40 text-muted-foreground"
+                  }
+                >
+                  {prompt.is_public ? "Public" : "Private"}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                User #{prompt.created_by}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {prompt.variables.length > 0 ? (
@@ -158,7 +177,7 @@ export function PromptTable({ prompts, onDelete }: PromptTableProps) {
                       {canEdit && (
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/prompts/${prompt.name}`}
+                            href={`/prompts/${prompt.name}?edit=true`}
                             className="cursor-pointer"
                           >
                             <Edit className="mr-2 h-4 w-4" />
@@ -186,3 +205,4 @@ export function PromptTable({ prompts, onDelete }: PromptTableProps) {
     </div>
   );
 }
+

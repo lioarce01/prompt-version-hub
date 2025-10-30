@@ -110,7 +110,7 @@ export function PromptPreview({ template, variables }: PromptPreviewProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md bg-secondary/20 border border-border/50 p-4 min-h-[100px]">
+          <div className="scrollbar-slim rounded-md bg-secondary/20 border border-border/50 p-4 min-h-[100px] max-h-[480px] overflow-y-auto">
             <pre className="text-sm font-mono text-foreground whitespace-pre-wrap break-words">
               {rendered || "Template is empty"}
             </pre>

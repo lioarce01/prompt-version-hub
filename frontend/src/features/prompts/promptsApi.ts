@@ -5,29 +5,26 @@ import type {
   CreatePromptRequest,
   UpdatePromptRequest,
   PromptListResponse,
+  PromptVersionListResponse,
   PromptDiffResponse,
+  PromptFilters,
+  PromptCloneRequest,
+  PromptVisibilityRequest,
 } from "@/types/prompts";
 
 export const promptsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get list of prompts with filters
-    getPrompts: builder.query<
-      PromptListResponse,
-      {
-        q?: string;
-        active?: boolean;
-        created_by?: number;
-        latest_only?: boolean;
-        sort_by?: string;
-        order?: "asc" | "desc";
-        limit?: number;
-        offset?: number;
-      }
-    >({
-      query: (params) => ({
-        url: "/prompts/",
-        params,
-      }),
+    getPrompts: builder.query<PromptListResponse, PromptFilters | void>({
+      query: (params) => {
+        if (!params) {
+          return { url: "/prompts/" };
+        }
+        return {
+          url: "/prompts/",
+          params,
+        };
+      },
       providesTags: (result) =>
         result?.items
           ? [
@@ -38,6 +35,28 @@ export const promptsApi = api.injectEndpoints({
               { type: "Prompt", id: "LIST" },
             ]
           : [{ type: "Prompt", id: "LIST" }],
+    }),
+
+    getMyPrompts: builder.query<PromptListResponse, PromptFilters | void>({
+      query: (params) => {
+        if (!params) {
+          return { url: "/prompts/mine" };
+        }
+        return {
+          url: "/prompts/mine",
+          params,
+        };
+      },
+      providesTags: (result) =>
+        result?.items
+          ? [
+              ...result.items.map(({ id }) => ({
+                type: "Prompt" as const,
+                id,
+              })),
+              { type: "Prompt", id: "MINE" },
+            ]
+          : [{ type: "Prompt", id: "MINE" }],
     }),
 
     // Get single prompt by name (active version)
@@ -54,6 +73,22 @@ export const promptsApi = api.injectEndpoints({
         body: data,
       }),
       invalidatesTags: [{ type: "Prompt", id: "LIST" }],
+    }),
+
+    updateVisibility: builder.mutation<
+      Prompt,
+      { name: string; data: PromptVisibilityRequest }
+    >({
+      query: ({ name, data }) => ({
+        url: `/prompts/${name}/visibility`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { name }) => [
+        { type: "Prompt", id: name },
+        { type: "Prompt", id: "LIST" },
+        { type: "Prompt", id: "MINE" },
+      ],
     }),
 
     // Update prompt (creates new version)
@@ -78,15 +113,54 @@ export const promptsApi = api.injectEndpoints({
         url: `/prompts/${name}`,
         method: "DELETE",
       }),
-      invalidatesTags: [{ type: "Prompt", id: "LIST" }],
+      invalidatesTags: [
+        { type: "Prompt", id: "LIST" },
+        { type: "Prompt", id: "MINE" },
+      ],
+    }),
+
+    clonePrompt: builder.mutation<Prompt, { name: string; data?: PromptCloneRequest }>({
+      query: ({ name, data }) => ({
+        url: `/prompts/${name}/clone`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: [
+        { type: "Prompt", id: "LIST" },
+        { type: "Prompt", id: "MINE" },
+      ],
     }),
 
     // Get all versions of a prompt
-    getVersions: builder.query<PromptVersion[], string>({
+    getVersions: builder.query<PromptVersionListResponse, string>({
       query: (name) => `/prompts/${name}/versions`,
-      providesTags: (result, error, name) => [
-        { type: "Prompt", id: `${name}-versions` },
-      ],
+      transformResponse: (
+        response: PromptVersion[] | PromptVersionListResponse,
+      ) => {
+        if (Array.isArray(response)) {
+          return { items: response };
+        }
+        if ("items" in response) {
+          return {
+            items: response.items ?? [],
+            limit: response.limit,
+            offset: response.offset,
+            count: response.count,
+            has_next: response.has_next,
+          };
+        }
+        return { items: [] };
+      },
+      providesTags: (result, error, name) => {
+        const items = result?.items ?? [];
+        return [
+          { type: "Prompt", id: `${name}-versions` },
+          ...items.map((version) => ({
+            type: "Prompt" as const,
+            id: `${name}-v${version.version}`,
+          })),
+        ];
+      },
     }),
 
     // Get specific version of a prompt
@@ -125,10 +199,13 @@ export const promptsApi = api.injectEndpoints({
 
 export const {
   useGetPromptsQuery,
+  useGetMyPromptsQuery,
   useGetPromptQuery,
   useCreatePromptMutation,
   useUpdatePromptMutation,
+  useUpdateVisibilityMutation,
   useDeletePromptMutation,
+  useClonePromptMutation,
   useGetVersionsQuery,
   useGetVersionQuery,
   useRollbackMutation,
