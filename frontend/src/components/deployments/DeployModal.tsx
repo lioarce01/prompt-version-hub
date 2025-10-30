@@ -48,6 +48,9 @@ export function DeployModal({
 
   const { data: promptsData, isLoading: promptsLoading } = useGetPromptsQuery({
     latest_only: true,
+    owned: true,
+    sort_by: "name",
+    order: "asc",
     limit: 100,
   });
 

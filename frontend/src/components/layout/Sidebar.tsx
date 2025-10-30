@@ -52,9 +52,22 @@ export function Sidebar() {
     <aside className="fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-64 border-r border-border/50 bg-background/50 backdrop-blur-xl">
       <nav className="flex flex-col gap-1 p-4">
         {navigation.map((item) => {
-          const isActive =
+          let isActive =
             pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+            (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+
+          if (item.href === "/prompts") {
+            isActive =
+              pathname === "/prompts" ||
+              (pathname.startsWith("/prompts/") &&
+                !pathname.startsWith("/prompts/my"));
+          }
+
+          if (item.href === "/prompts/my") {
+            isActive =
+              pathname === "/prompts/my" ||
+              pathname.startsWith("/prompts/my/");
+          }
 
           return (
             <Link

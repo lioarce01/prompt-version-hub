@@ -9,9 +9,9 @@ import { DiffViewer } from "./DiffViewer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 interface PromptEditorProps {
@@ -33,6 +33,9 @@ export function PromptEditor({
   const [variables, setVariables] = useState<string[]>(prompt.variables);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reviewTab, setReviewTab] = useState<"preview" | "diff" | "reference">(
+    "preview",
+  );
 
   useEffect(() => {
     setTemplate(prompt.template);
@@ -138,11 +141,14 @@ export function PromptEditor({
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8">
           <div className="min-w-0 space-y-6">
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle>Template Editor</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <section className="space-y-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-6">
+              <header className="space-y-1">
+                <h3 className="text-lg font-semibold text-foreground">Template Editor</h3>
+                <p className="text-sm text-muted-foreground">
+                  Update the prompt body and detected variables will refresh automatically.
+                </p>
+              </header>
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="template">
                     Template <span className="text-destructive">*</span>
@@ -202,10 +208,10 @@ export function PromptEditor({
                     </AlertDescription>
                   </Alert>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 justify-end">
               <Button
                 type="submit"
                 className="gap-2"
@@ -225,30 +231,45 @@ export function PromptEditor({
             </div>
           </div>
 
-          <div className="min-w-0 space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">
-                Live Preview
-              </h3>
-              <PromptPreview template={template} variables={variables} />
+          <div className="min-w-0 space-y-4 lg:max-h-[680px] lg:overflow-y-auto lg:pr-2 scrollbar-slim">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Review & Compare</h3>
+              <p className="text-sm text-muted-foreground">
+                Inspect the live preview, see a diff, or reference the current version without leaving the editor.
+              </p>
             </div>
 
-            <DiffViewer original={prompt.template} updated={template} />
+            <Tabs
+              value={reviewTab}
+              onValueChange={(value) =>
+                setReviewTab(value as "preview" | "diff" | "reference")
+              }
+              className="space-y-4"
+            >
+              <TabsList className="grid grid-cols-3 bg-secondary/30 border border-border/40">
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+                <TabsTrigger value="diff">Diff</TabsTrigger>
+                <TabsTrigger value="reference">Reference</TabsTrigger>
+              </TabsList>
 
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle>Current Version Reference</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md bg-secondary/20 border border-border/50 p-4">
+              <TabsContent value="preview" className="space-y-4">
+                <PromptPreview template={template} variables={variables} />
+              </TabsContent>
+
+              <TabsContent value="diff" className="space-y-4">
+                <DiffViewer original={prompt.template} updated={template} />
+              </TabsContent>
+
+              <TabsContent value="reference" className="space-y-4">
+                <div className="scrollbar-slim rounded-md bg-secondary/20 border border-border/50 p-4 max-h-[320px] overflow-y-auto">
                   <pre className="whitespace-pre-wrap break-words text-sm font-mono text-muted-foreground">
                     {prompt.template}
                   </pre>
                 </div>
                 {prompt.variables.length > 0 && (
-                  <div className="mt-4 space-y-2">
+                  <div className="space-y-2">
                     <Label className="text-sm text-muted-foreground">
-                      Variables
+                      Active Variables
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {prompt.variables.map((variable) => (
@@ -263,8 +284,8 @@ export function PromptEditor({
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

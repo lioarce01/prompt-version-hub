@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useGetCurrentDeploymentQuery,
   useGetDeploymentHistoryQuery,
   useGetAllDeploymentHistoryQuery,
 } from "@/features/deployments/deploymentsApi";
+import { useGetPromptsQuery } from "@/features/prompts/promptsApi";
 import { useRole } from "@/hooks/useRole";
-import { EnvironmentCard } from "@/components/deployments/EnvironmentCard";
+import { EnvironmentCard, type DeploymentData } from "@/components/deployments/EnvironmentCard";
 import { DeployModal } from "@/components/deployments/DeployModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,55 +34,216 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import type { Environment } from "@/types/deployments";
 
-const ENVIRONMENTS: Environment[] = ["dev", "staging", "production"];
-
 export default function DeploymentsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const promptParam = searchParams.get("prompt") ?? "";
+  const envParamRaw = (searchParams.get("env") ?? "all").toLowerCase();
+  const validEnvFilters = new Set<Environment | "all">([
+    "all",
+    "dev",
+    "staging",
+    "production",
+  ]);
+  const envParam = validEnvFilters.has(envParamRaw as Environment | "all")
+    ? (envParamRaw as Environment | "all")
+    : "all";
   const { canEdit } = useRole();
+
+  const [promptFilter, setPromptFilter] = useState(promptParam);
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [selectedEnvironmentForDeploy, setSelectedEnvironmentForDeploy] =
     useState<Environment>("dev");
   const [historyEnvironmentFilter, setHistoryEnvironmentFilter] =
-    useState<Environment | "all">("all");
+    useState<Environment | "all">(envParam);
   const [historyPage, setHistoryPage] = useState(0);
   const limit = 5;
 
+  useEffect(() => {
+    setPromptFilter((current) => {
+      if (current === promptParam) {
+        return current;
+      }
+      setHistoryPage(0);
+      return promptParam;
+    });
+  }, [promptParam]);
+
+  useEffect(() => {
+    setHistoryEnvironmentFilter((current) => {
+      if (current === envParam) {
+        return current;
+      }
+      setHistoryPage(0);
+      return envParam;
+    });
+  }, [envParam]);
+
+  const { data: promptData, isLoading: promptOptionsLoading } = useGetPromptsQuery({
+    owned: true,
+    latest_only: true,
+    sort_by: "name",
+    order: "asc",
+    limit: 100,
+  });
+
+  const promptOptions = useMemo(() => promptData?.items ?? [], [promptData]);
+  const selectPromptValue = promptFilter || "all";
+  const promptScopeLabel = useMemo(() => {
+    if (!promptFilter) {
+      return "All prompts";
+    }
+    const match = promptOptions.find((prompt) => prompt.name === promptFilter);
+    return match?.name ?? promptFilter;
+  }, [promptFilter, promptOptions]);
+
+  const handlePromptScopeChange = (value: string) => {
+    const nextValue = value === "all" ? "" : value;
+    if (nextValue === promptFilter) {
+      return;
+    }
+    setPromptFilter(nextValue);
+    setHistoryPage(0);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextValue) {
+      params.set("prompt", nextValue);
+    } else {
+      params.delete("prompt");
+    }
+    params.set("env", historyEnvironmentFilter);
+    router.replace(
+      params.toString() ? `${pathname}?${params.toString()}` : pathname,
+      { scroll: false }
+    );
+  };
+
+  const devParams = useMemo(
+    () =>
+      promptFilter
+        ? { environment: "dev" as Environment, prompt: promptFilter }
+        : { environment: "dev" as Environment },
+    [promptFilter]
+  );
+  const stagingParams = useMemo(
+    () =>
+      promptFilter
+        ? { environment: "staging" as Environment, prompt: promptFilter }
+        : { environment: "staging" as Environment },
+    [promptFilter]
+  );
+  const productionParams = useMemo(
+    () =>
+      promptFilter
+        ? { environment: "production" as Environment, prompt: promptFilter }
+        : { environment: "production" as Environment },
+    [promptFilter]
+  );
+
   // Fetch current deployments for all environments
-  const { data: devDeployment, isLoading: devLoading } =
-    useGetCurrentDeploymentQuery({ environment: "dev" });
-  const { data: stagingDeployment, isLoading: stagingLoading } =
-    useGetCurrentDeploymentQuery({ environment: "staging" });
-  const { data: productionDeployment, isLoading: productionLoading } =
-    useGetCurrentDeploymentQuery({ environment: "production" });
+  const {
+    data: devDeployment,
+    isLoading: devLoading,
+  } = useGetCurrentDeploymentQuery(devParams, {
+    refetchOnMountOrArgChange: true,
+  });
+  const {
+    data: stagingDeployment,
+    isLoading: stagingLoading,
+  } = useGetCurrentDeploymentQuery(stagingParams, {
+    refetchOnMountOrArgChange: true,
+  });
+  const {
+    data: productionDeployment,
+    isLoading: productionLoading,
+  } = useGetCurrentDeploymentQuery(productionParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   // Fetch deployment history based on filter
   const shouldFetchAll = historyEnvironmentFilter === "all";
+  const effectiveHistoryEnvironment = shouldFetchAll
+    ? "dev"
+    : historyEnvironmentFilter;
+
+  const historyQueryArgs = useMemo(
+    () => ({
+      environment: effectiveHistoryEnvironment as Environment,
+      limit,
+      offset: historyPage * limit,
+      ...(promptFilter ? { prompt: promptFilter } : {}),
+    }),
+    [effectiveHistoryEnvironment, historyPage, limit, promptFilter]
+  );
+
+  const mergedHistoryLimit = promptFilter ? 100 : limit;
+
+  const allHistoryQueryArgs = useMemo(
+    () => ({
+      limit: mergedHistoryLimit,
+      offset: promptFilter ? 0 : historyPage * mergedHistoryLimit,
+      ...(promptFilter ? { prompt: promptFilter } : {}),
+    }),
+    [mergedHistoryLimit, promptFilter, historyPage]
+  );
 
   const { data: historyDataFiltered, isLoading: historyLoadingFiltered } =
-    useGetDeploymentHistoryQuery(
-      {
-        environment: historyEnvironmentFilter as Environment,
-        limit,
-        offset: historyPage * limit,
-      },
-      { skip: shouldFetchAll }
-    );
+    useGetDeploymentHistoryQuery(historyQueryArgs, { skip: shouldFetchAll });
 
   const { data: historyDataAll, isLoading: historyLoadingAll } =
-    useGetAllDeploymentHistoryQuery(
-      {
-        limit,
-        offset: historyPage * limit,
-      },
-      { skip: !shouldFetchAll }
-    );
+    useGetAllDeploymentHistoryQuery(allHistoryQueryArgs, {
+      skip: !(shouldFetchAll || promptFilter),
+    });
 
   const historyData = shouldFetchAll ? historyDataAll : historyDataFiltered;
-  const historyLoading = shouldFetchAll ? historyLoadingAll : historyLoadingFiltered;
+  const historyLoading = shouldFetchAll
+    ? historyLoadingAll || historyLoadingFiltered
+    : historyLoadingFiltered;
+
+  const scopedDeploymentsByEnv = useMemo<
+    Partial<Record<Environment, DeploymentData>>
+  >(() => {
+    if (!promptFilter || !historyDataAll?.items?.length) {
+      return {};
+    }
+
+    const map: Partial<Record<Environment, DeploymentData>> = {};
+    for (const item of historyDataAll.items) {
+      if (!item) {
+        continue;
+      }
+      const environmentKey = item.environment as Environment;
+      if (!map[environmentKey]) {
+        map[environmentKey] = item as DeploymentData;
+      }
+    }
+    return map;
+  }, [promptFilter, historyDataAll?.items]);
 
   const handleOpenDeployModal = (environment: Environment) => {
     setSelectedEnvironmentForDeploy(environment);
     setIsDeployModalOpen(true);
   };
+
+  const deriveCardState = (
+    environment: Environment,
+    fallbackDeployment: typeof devDeployment,
+    fallbackLoading: boolean
+  ) => {
+    if (!promptFilter) {
+      return { deployment: fallbackDeployment ?? null, isLoading: fallbackLoading };
+    }
+    const scopedDeployment = scopedDeploymentsByEnv[environment] ?? null;
+    return {
+      deployment: scopedDeployment,
+      isLoading: historyLoadingAll,
+    };
+  };
+
+  const devCardState = deriveCardState("dev", devDeployment, devLoading);
+  const stagingCardState = deriveCardState("staging", stagingDeployment, stagingLoading);
+  const productionCardState = deriveCardState("production", productionDeployment, productionLoading);
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -95,28 +258,68 @@ export default function DeploymentsPage() {
         </p>
       </div>
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          {promptFilter
+            ? `Showing deployments for ${promptScopeLabel}.`
+            : "Showing deployments for all prompts you own."}
+        </p>
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectPromptValue}
+            onValueChange={handlePromptScopeChange}
+            disabled={promptOptionsLoading}
+          >
+            <SelectTrigger className="w-[220px] bg-background/60 border-border/50 text-foreground">
+              <SelectValue placeholder="Select prompt" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Prompts</SelectItem>
+              {promptOptions.map((prompt) => (
+                <SelectItem key={prompt.id} value={prompt.name}>
+                  {prompt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {promptFilter && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-foreground hover:text-foreground/80"
+              onClick={() => handlePromptScopeChange("all")}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Environment Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <EnvironmentCard
           environment="dev"
-          deployment={devDeployment}
-          isLoading={devLoading}
+          deployment={devCardState.deployment}
+          isLoading={devCardState.isLoading}
           onDeploy={() => handleOpenDeployModal("dev")}
           canDeploy={canEdit}
+          promptName={promptFilter || undefined}
         />
         <EnvironmentCard
           environment="staging"
-          deployment={stagingDeployment}
-          isLoading={stagingLoading}
+          deployment={stagingCardState.deployment}
+          isLoading={stagingCardState.isLoading}
           onDeploy={() => handleOpenDeployModal("staging")}
           canDeploy={canEdit}
+          promptName={promptFilter || undefined}
         />
         <EnvironmentCard
           environment="production"
-          deployment={productionDeployment}
-          isLoading={productionLoading}
+          deployment={productionCardState.deployment}
+          isLoading={productionCardState.isLoading}
           onDeploy={() => handleOpenDeployModal("production")}
           canDeploy={canEdit}
+          promptName={promptFilter || undefined}
         />
       </div>
 
@@ -131,11 +334,29 @@ export default function DeploymentsPage() {
             <Select
               value={historyEnvironmentFilter}
               onValueChange={(value) => {
-                setHistoryEnvironmentFilter(value as Environment | "all");
-                setHistoryPage(0); // Reset pagination
+                const nextEnv = value as Environment | "all";
+                setHistoryEnvironmentFilter(nextEnv);
+                setHistoryPage(0);
+
+                const params = new URLSearchParams(searchParams.toString());
+                if (promptFilter) {
+                  params.set("prompt", promptFilter);
+                } else {
+                  params.delete("prompt");
+                }
+                if (nextEnv === "all") {
+                  params.delete("env");
+                } else {
+                  params.set("env", nextEnv);
+                }
+
+                router.replace(
+                  params.toString() ? `${pathname}?${params.toString()}` : pathname,
+                  { scroll: false }
+                );
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-background/60 border-border/50 text-foreground">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -242,7 +463,9 @@ export default function DeploymentsPage() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <History className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="text-sm text-muted-foreground">
-                No deployment history yet
+                {promptFilter
+                  ? `No deployment history yet for ${promptScopeLabel}.`
+                  : "No deployment history yet"}
               </p>
             </div>
           )}
@@ -254,6 +477,7 @@ export default function DeploymentsPage() {
         open={isDeployModalOpen}
         onOpenChange={setIsDeployModalOpen}
         defaultEnvironment={selectedEnvironmentForDeploy}
+        defaultPromptName={promptFilter || undefined}
       />
     </div>
   );

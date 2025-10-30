@@ -86,8 +86,12 @@ export default function NewPromptPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/prompts">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-foreground hover:text-foreground/80"
+          >
+            <ArrowLeft className="h-4 w-4 text-foreground" />
             Back
           </Button>
         </Link>

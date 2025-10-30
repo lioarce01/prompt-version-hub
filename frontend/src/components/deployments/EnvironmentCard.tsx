@@ -6,7 +6,7 @@ import { Rocket, Clock, User, GitBranch, AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Environment } from "@/types/deployments";
 
-interface DeploymentData {
+export interface DeploymentData {
   id: number;
   prompt?: {
     id: number;
@@ -30,6 +30,7 @@ interface EnvironmentCardProps {
   isLoading?: boolean;
   onDeploy: () => void;
   canDeploy: boolean;
+  promptName?: string;
 }
 
 const ENVIRONMENT_CONFIG: Record<
@@ -56,6 +57,7 @@ export function EnvironmentCard({
   isLoading,
   onDeploy,
   canDeploy,
+  promptName,
 }: EnvironmentCardProps) {
   const config = ENVIRONMENT_CONFIG[environment];
 
@@ -130,7 +132,9 @@ export function EnvironmentCard({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <AlertCircle className="h-10 w-10 text-muted-foreground/50 mb-3" />
             <p className="text-sm text-muted-foreground mb-4">
-              No deployment in this environment yet.
+              {promptName
+                ? `No deployments for ${promptName} in this environment yet.`
+                : "No deployment in this environment yet."}
             </p>
             {canDeploy && (
               <Button onClick={onDeploy} size="sm">

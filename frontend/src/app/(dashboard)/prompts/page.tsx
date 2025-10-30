@@ -31,7 +31,6 @@ import {
   ChevronRight,
   Globe,
   Lock,
-  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -52,7 +51,6 @@ type ActiveFilter = "all" | "active" | "inactive";
 type SortOption = "created_at" | "name";
 
 const PAGE_SIZE = 20;
-const HUB_HIGHLIGHTS_SKELETON_ITEMS = Array.from({ length: 3 }, (_, index) => index);
 const HUB_SKELETON_ITEMS = Array.from({ length: 6 }, (_, index) => index);
 
 const visibilityConfig: Record<
@@ -113,6 +111,9 @@ export default function PromptsPage() {
   };
 
   const handleClone = async (prompt: Prompt) => {
+    if (isCloning) {
+      return;
+    }
     try {
       await clonePrompt({ name: prompt.name }).unwrap();
       toast.success(`Prompt "${prompt.name}" cloned to your workspace`);
@@ -131,8 +132,6 @@ export default function PromptsPage() {
     totalCount > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : 0;
   const startItem = totalCount > 0 ? offset + 1 : 0;
   const endItem = totalCount > 0 ? offset + itemsOnPage : 0;
-
-  const hubItems = (data?.items ?? []).slice(0, 6);
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -153,7 +152,7 @@ export default function PromptsPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm">
+      <div className="rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Prompt Hub</h2>
@@ -165,7 +164,11 @@ export default function PromptsPage() {
             <Button
               variant={hubVisibility === "all" ? "secondary" : "ghost"}
               size="sm"
-              className="gap-2"
+              className={
+                hubVisibility === "all"
+                  ? "gap-2"
+                  : "gap-2 text-muted-foreground hover:text-foreground"
+              }
               onClick={() => {
                 setHubVisibility("all");
                 setOffset(0);
@@ -177,13 +180,24 @@ export default function PromptsPage() {
             <Button
               variant={hubVisibility === "my-public" ? "secondary" : "ghost"}
               size="sm"
-              className="gap-2"
+              className={
+                hubVisibility === "my-public"
+                  ? "gap-2"
+                  : "gap-2 text-muted-foreground hover:text-foreground"
+              }
               onClick={() => {
                 setHubVisibility("my-public");
                 setOffset(0);
               }}
             >
-              <Badge variant="outline" className="h-5 w-5 shrink-0 rounded-full uppercase">
+              <Badge
+                variant={hubVisibility === "my-public" ? "secondary" : "outline"}
+                className={
+                  hubVisibility === "my-public"
+                    ? "h-5 px-2 shrink-0 rounded-full uppercase"
+                    : "h-5 px-2 shrink-0 rounded-full uppercase text-muted-foreground border-border/50"
+                }
+              >
                 Me
               </Badge>
               My Public
@@ -191,7 +205,11 @@ export default function PromptsPage() {
             <Button
               variant={hubVisibility === "my-private" ? "secondary" : "ghost"}
               size="sm"
-              className="gap-2"
+              className={
+                hubVisibility === "my-private"
+                  ? "gap-2"
+                  : "gap-2 text-muted-foreground hover:text-foreground"
+              }
               onClick={() => {
                 setHubVisibility("my-private");
                 setOffset(0);
@@ -203,131 +221,81 @@ export default function PromptsPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {isLoading || isFetching ? (
-            HUB_HIGHLIGHTS_SKELETON_ITEMS.map((item) => (
-              <Skeleton key={`hub-highlights-skeleton-${item}`} className="h-36 w-full bg-secondary/20" />
-            ))
-          ) : hubItems.length > 0 ? (
-            hubItems.map((prompt) => (
-              <div
-                key={`${prompt.id}-hub`}
-                className="group rounded-lg border border-border/50 bg-background/40 p-4 transition hover:border-border/80 hover:bg-background/60"
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
+            <Input
+              placeholder="Search prompts..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setOffset(0);
+              }}
+              className="pl-9 bg-background/50 backdrop-blur-sm border-border/50 text-white placeholder:text-white/50"
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-3 sm:justify-start">
+            <Select
+              value={activeFilter}
+              onValueChange={(value) => {
+                setActiveFilter(value as ActiveFilter);
+                setOffset(0);
+              }}
+            >
+              <SelectTrigger className="w-[160px] bg-background/50 backdrop-blur-sm border-border/50 text-white">
+                <Filter className="h-4 w-4 mr-2 text-white/70" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Prompts</SelectItem>
+                <SelectItem value="active">Active Only</SelectItem>
+                <SelectItem value="inactive">Inactive Only</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={sortBy}
+              onValueChange={(value) => {
+                setSortBy(value as SortOption);
+                setOffset(0);
+              }}
+            >
+              <SelectTrigger className="w-[160px] bg-background/50 backdrop-blur-sm border-border/50 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">Recent First</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("grid")}
+                className={
+                  viewMode === "grid"
+                    ? "bg-secondary"
+                    : "bg-background/50 backdrop-blur-sm border border-border/50 hover:bg-secondary/50 text-white/70 hover:text-white"
+                }
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-foreground">{prompt.name}</h3>
-                      <Badge variant="outline" className="gap-1 text-xs uppercase">
-                        <Globe className="h-3 w-3" />
-                        {prompt.is_public ? "Public" : "Private"}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Version v{prompt.version} | User #{prompt.created_by}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 text-xs"
-                    onClick={() => handleClone(prompt)}
-                    disabled={isCloning}
-                  >
-                    <Copy className="h-3 w-3" />
-                    Clone Prompt
-                  </Button>
-                  {!prompt.is_public && (
-                    <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
-                      Private
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No prompts found for this filter yet.
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
-          <Input
-            placeholder="Search prompts..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setOffset(0);
-            }}
-            className="pl-9 bg-background/50 backdrop-blur-sm border-border/50 text-white placeholder:text-white/50"
-          />
-        </div>
-
-        <Select
-          value={activeFilter}
-          onValueChange={(value) => {
-            setActiveFilter(value as ActiveFilter);
-            setOffset(0);
-          }}
-        >
-          <SelectTrigger className="w-[160px] bg-background/50 backdrop-blur-sm border-border/50 text-white">
-            <Filter className="h-4 w-4 mr-2 text-white/70" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Prompts</SelectItem>
-            <SelectItem value="active">Active Only</SelectItem>
-            <SelectItem value="inactive">Inactive Only</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={sortBy}
-          onValueChange={(value) => {
-            setSortBy(value as SortOption);
-            setOffset(0);
-          }}
-        >
-          <SelectTrigger className="w-[160px] bg-background/50 backdrop-blur-sm border-border/50 text-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created_at">Recent First</SelectItem>
-            <SelectItem value="name">Name (A-Z)</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === "grid" ? "secondary" : "ghost"}
-            size="icon"
-            onClick={() => setViewMode("grid")}
-            className={
-              viewMode === "grid"
-                ? "bg-secondary"
-                : "bg-background/50 backdrop-blur-sm border border-border/50 hover:bg-secondary/50 text-white/70 hover:text-white"
-            }
-          >
-            <Grid3x3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "table" ? "secondary" : "ghost"}
-            size="icon"
-            onClick={() => setViewMode("table")}
-            className={
-              viewMode === "table"
-                ? "bg-secondary"
-                : "bg-background/50 backdrop-blur-sm border border-border/50 hover:bg-secondary/50 text-white/70 hover:text-white"
-            }
-          >
-            <List className="h-4 w-4" />
-          </Button>
+                <Grid3x3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("table")}
+                className={
+                  viewMode === "table"
+                    ? "bg-secondary"
+                    : "bg-background/50 backdrop-blur-sm border border-border/50 hover:bg-secondary/50 text-white/70 hover:text-white"
+                }
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -356,8 +324,10 @@ export default function PromptsPage() {
           <div className="mx-auto w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
             <Plus className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No prompts yet</h3>
-          <p className="text-muted-foreground mb-4">
+          <h3 className="text-lg font-semibold mb-2 text-foreground">
+            No prompts yet
+          </h3>
+          <p className="text-foreground/70 mb-4">
             {searchQuery
               ? "No prompts match your search."
               : "Get started by creating your first prompt."}
@@ -382,6 +352,7 @@ export default function PromptsPage() {
                   key={prompt.id}
                   prompt={prompt}
                   onDelete={(name) => setDeletePromptName(name)}
+                  onClone={handleClone}
                 />
               ))}
             </div>
@@ -389,6 +360,7 @@ export default function PromptsPage() {
             <PromptTable
               prompts={data.items}
               onDelete={(name) => setDeletePromptName(name)}
+              onClone={handleClone}
             />
           )}
         </>

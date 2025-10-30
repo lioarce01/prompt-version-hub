@@ -31,9 +31,10 @@ export const deploymentsApi = api.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: (result, error, { environment }) => [
+      invalidatesTags: (result, error, { environment, prompt_name }) => [
         { type: "Deployment", id: environment },
         { type: "Deployment", id: "HISTORY" },
+        ...(prompt_name ? [{ type: "Deployment" as const, id: `HISTORY-${prompt_name}` }] : []),
       ],
     }),
 
@@ -83,8 +84,8 @@ export const deploymentsApi = api.injectEndpoints({
           },
         };
       },
-      providesTags: (result) => [
-        { type: "Deployment", id: "HISTORY" },
+      providesTags: (result, error, { prompt }) => [
+        { type: "Deployment", id: prompt ? `HISTORY-${prompt}` : "HISTORY" },
         ...(result?.items || []).map((deployment) => ({
           type: "Deployment" as const,
           id: deployment.id,
@@ -95,7 +96,7 @@ export const deploymentsApi = api.injectEndpoints({
     // Get all deployment history (across all environments) - custom query
     getAllDeploymentHistory: builder.query<
       DeploymentHistoryResponse,
-      { limit?: number; offset?: number }
+      { limit?: number; offset?: number; prompt?: string }
     >({
       async queryFn(arg, queryApi, extraOptions, baseQuery) {
         // Fetch ALL records from all 3 environments (we'll paginate after merging)
@@ -107,6 +108,7 @@ export const deploymentsApi = api.injectEndpoints({
               params: {
                 limit: 100, // Fetch more records to ensure we have enough after merging
                 offset: 0,
+                ...(arg.prompt ? { prompt: arg.prompt } : {}),
               },
             })
           )
@@ -145,8 +147,8 @@ export const deploymentsApi = api.injectEndpoints({
           },
         };
       },
-      providesTags: (result) => [
-        { type: "Deployment", id: "HISTORY" },
+      providesTags: (result, error, { prompt }) => [
+        { type: "Deployment", id: prompt ? `HISTORY-${prompt}` : "HISTORY" },
         ...(result?.items || []).map((deployment) => ({
           type: "Deployment" as const,
           id: deployment.id,

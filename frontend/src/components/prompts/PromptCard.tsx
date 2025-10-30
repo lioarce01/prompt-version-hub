@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Edit, Trash2, Eye, GitBranch } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Eye, GitBranch, Copy } from "lucide-react";
 import type { Prompt } from "@/types/prompts";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
@@ -19,9 +19,10 @@ import { cn } from "@/lib/utils";
 interface PromptCardProps {
   prompt: Prompt;
   onDelete?: (name: string) => void;
+  onClone?: (prompt: Prompt) => void;
 }
 
-export function PromptCard({ prompt, onDelete }: PromptCardProps) {
+export function PromptCard({ prompt, onDelete, onClone }: PromptCardProps) {
   const { canEdit, canDelete } = useRole();
 
   return (
@@ -44,12 +45,10 @@ export function PromptCard({ prompt, onDelete }: PromptCardProps) {
               <GitBranch className="w-3 h-3 mr-1" />v{prompt.version}
             </Badge>
             <Badge
-              variant="outline"
+              variant="secondary"
               className={cn(
-                "text-xs capitalize",
-                prompt.is_public
-                  ? "border-accent/40 text-accent"
-                  : "border-muted-foreground/40 text-muted-foreground",
+                "text-xs capitalize bg-secondary/50 border border-border/40 px-2 py-0.5",
+                prompt.is_public ? "text-muted-foreground border-accent/40" : "text-foreground"
               )}
             >
               {prompt.is_public ? "Public" : "Private"}
@@ -99,6 +98,15 @@ export function PromptCard({ prompt, onDelete }: PromptCardProps) {
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Link>
+                </DropdownMenuItem>
+              )}
+              {onClone && (
+                <DropdownMenuItem
+                  onClick={() => onClone(prompt)}
+                  className="cursor-pointer"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Clone
                 </DropdownMenuItem>
               )}
               {canDelete && onDelete && (

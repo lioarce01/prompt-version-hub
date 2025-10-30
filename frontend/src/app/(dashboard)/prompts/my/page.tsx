@@ -134,7 +134,7 @@ export default function MyPromptsPage() {
 
       <div className="rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm space-y-4">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_250px]">
-          <div className="relative">
+          <div className="relative flex items-center">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search my prompts..."
@@ -143,7 +143,7 @@ export default function MyPromptsPage() {
                 setSearch(event.target.value);
                 setOffset(0);
               }}
-              className="pl-9"
+              className="pl-10 h-12"
             />
           </div>
           <Alert className="border-primary/40 bg-primary/5">
@@ -154,9 +154,9 @@ export default function MyPromptsPage() {
         </div>
 
         <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="font-medium">Visibility:</span>
-            <div className="flex rounded-lg border border-border/40 bg-background/50 p-1">
+            <div className="flex rounded-lg border border-border/40 bg-background/50 p-1 gap-1">
               {(["all", "public", "private"] as const).map((option) => (
                 <Button
                   key={option}
@@ -173,9 +173,9 @@ export default function MyPromptsPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="font-medium">Status:</span>
-            <div className="flex rounded-lg border border-border/40 bg-background/50 p-1">
+            <div className="flex rounded-lg border border-border/40 bg-background/50 p-1 gap-1">
               {(["all", "active", "inactive"] as const).map((option) => (
                 <Button
                   key={option}
@@ -192,9 +192,9 @@ export default function MyPromptsPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="font-medium">Sort:</span>
-            <div className="flex rounded-lg border border-border/40 bg-background/50 p-1">
+            <div className="flex rounded-lg border border-border/40 bg-background/50 p-1 gap-1">
               {(["created_at", "name"] as const).map((option) => (
                 <Button
                   key={option}
@@ -252,7 +252,7 @@ export default function MyPromptsPage() {
                       variant="outline"
                       className={
                         prompt.is_public
-                          ? "border-accent/40 text-accent"
+                          ? "border-accent/40 text-muted-foreground"
                           : "border-muted-foreground/40 text-muted-foreground"
                       }
                     >
