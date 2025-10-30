@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -202,7 +202,7 @@ def list_prompts(
     offset: int = 0,
     visibility: Optional[str] = None,
     owned: Optional[bool] = None,
-) -> List[Prompt]:
+) -> Tuple[List[Prompt], int]:
     query = db.query(Prompt).filter(
         or_(Prompt.is_public == True, Prompt.created_by == viewer_id)
     )
@@ -225,6 +225,8 @@ def list_prompts(
     if latest_only:
         query = query.filter(Prompt.active == True)
 
+    total = query.count()
+
     sort_map = {
         "created_at": Prompt.created_at,
         "version": Prompt.version,
@@ -236,7 +238,8 @@ def list_prompts(
     else:
         query = query.order_by(col.desc())
 
-    return query.limit(limit).offset(offset).all()
+    items = query.offset(offset).limit(limit).all()
+    return items, total
 
 
 def set_visibility(db: Session, name: str, user_id: int, make_public: bool) -> Prompt:

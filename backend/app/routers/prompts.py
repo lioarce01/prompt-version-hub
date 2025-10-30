@@ -41,7 +41,7 @@ def list_prompts(
         sort_by = "created_at"
     if order not in {"asc", "desc"}:
         order = "desc"
-    rows = svc.list_prompts(
+    items, total = svc.list_prompts(
         db,
         viewer_id=user.id,
         q=q,
@@ -50,18 +50,17 @@ def list_prompts(
         latest_only=latest_only,
         sort_by=sort_by,
         order=order,
-        limit=limit + 1,
+        limit=limit,
         offset=offset,
         visibility=visibility,
         owned=owned,
     )
-    items = rows[:limit]
-    has_next = len(rows) > limit
+    has_next = (offset + len(items)) < total
     return {
         "items": items,
         "limit": limit,
         "offset": offset,
-        "count": len(items),
+        "count": total,
         "has_next": has_next,
     }
 
@@ -84,7 +83,7 @@ def list_my_prompts(
         sort_by = "created_at"
     if order not in {"asc", "desc"}:
         order = "desc"
-    rows = svc.list_prompts(
+    items, total = svc.list_prompts(
         db,
         viewer_id=user.id,
         q=q,
@@ -92,18 +91,17 @@ def list_my_prompts(
         latest_only=False,
         sort_by=sort_by,
         order=order,
-        limit=limit + 1,
+        limit=limit,
         offset=offset,
         visibility=visibility if visibility in {"all", "public", "private"} else "all",
         owned=True,
     )
-    items = rows[:limit]
-    has_next = len(rows) > limit
+    has_next = (offset + len(items)) < total
     return {
         "items": items,
         "limit": limit,
         "offset": offset,
-        "count": len(items),
+        "count": total,
         "has_next": has_next,
     }
 
