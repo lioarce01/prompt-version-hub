@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { ThemeProvider } from "next-themes";
 import { makeStore, type AppStore } from "@/lib/store";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const storeRef = useRef<AppStore | null>(null);
@@ -27,7 +28,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <Provider store={storeRef.current}>
         <PersistGate loading={null} persistor={persistorRef.current}>
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
           <Toaster
             position="top-right"
             offset={16}
