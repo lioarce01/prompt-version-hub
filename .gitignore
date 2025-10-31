@@ -156,3 +156,5 @@ docker-compose.override.yml
 
 FRONTEND_ROADMAP.md
 planning.md
+ai-test-case-generator-planning.md
+error-boundaries-planning.md
