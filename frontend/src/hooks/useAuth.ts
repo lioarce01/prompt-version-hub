@@ -48,6 +48,14 @@ export function useAuth() {
       const timeUntilExpiry = expiresAt - now;
       const refreshAt = timeUntilExpiry - 5 * 60 * 1000; // 5 minutes before expiry
 
+      // If token expired more than 1 minute ago, don't try to refresh (likely no valid refresh token)
+      if (timeUntilExpiry < -60 * 1000) {
+        console.log("Token expired too long ago, logging out");
+        dispatch(logout());
+        router.push("/login");
+        return;
+      }
+
       if (refreshAt > 0) {
         const timer = setTimeout(async () => {
           try {
@@ -61,14 +69,15 @@ export function useAuth() {
         }, refreshAt);
 
         return () => clearTimeout(timer);
-      } else {
-        // Token already expired or will expire very soon, try to refresh immediately
+      } else if (timeUntilExpiry > 0) {
+        // Token will expire soon (< 5 min) but hasn't expired yet, try to refresh immediately
         refreshToken()
           .unwrap()
           .then((response) => {
             dispatch(setToken(response.access_token));
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error("Immediate refresh failed:", error);
             dispatch(logout());
             router.push("/login");
           });
@@ -83,17 +92,35 @@ export function useAuth() {
   // Handle auth errors (expired token, invalid token)
   useEffect(() => {
     if (isError && token) {
-      // Try to refresh token before logging out
-      refreshToken()
-        .unwrap()
-        .then((response) => {
-          dispatch(setToken(response.access_token));
-        })
-        .catch(() => {
-          // Refresh failed, logout
+      // Check if token is still relatively fresh (< 1 hour old)
+      try {
+        const decoded = jwtDecode<JwtPayload>(token);
+        const expiresAt = decoded.exp * 1000;
+        const now = Date.now();
+        const timeUntilExpiry = expiresAt - now;
+
+        // Only try to refresh if token expired recently (< 1 minute ago)
+        if (timeUntilExpiry > -60 * 1000) {
+          refreshToken()
+            .unwrap()
+            .then((response) => {
+              dispatch(setToken(response.access_token));
+            })
+            .catch(() => {
+              // Refresh failed, logout
+              dispatch(logout());
+              router.push("/login");
+            });
+        } else {
+          // Token is too old, just logout
           dispatch(logout());
           router.push("/login");
-        });
+        }
+      } catch (error) {
+        // Can't decode token, logout
+        dispatch(logout());
+        router.push("/login");
+      }
     }
   }, [isError, token, dispatch, router, refreshToken]);
 

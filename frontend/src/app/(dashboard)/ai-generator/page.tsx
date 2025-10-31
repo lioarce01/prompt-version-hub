@@ -233,10 +233,10 @@ export default function AIGeneratorPage() {
       </div>
 
       {/* Info Alert */}
-      <Alert className="border-primary/30 bg-primary/5">
+      <Alert className="border-border/60 bg-card/50">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary flex-shrink-0" />
-          <AlertDescription className="text-sm">
+          <AlertDescription className="text-sm text-muted-foreground">
             Describe your use case and let AI create a production-ready prompt template with
             variables, best practices, and optimizations.
           </AlertDescription>
@@ -550,12 +550,14 @@ export default function AIGeneratorPage() {
                 </div>
 
                 {/* Info Alert */}
-                <Alert className="border-primary/30 bg-primary/5">
-                  <AlertCircle className="h-4 w-4 text-primary" />
-                  <AlertDescription className="text-xs">
-                    You can now copy this prompt or save it to your Prompts library for version
-                    control and deployment.
-                  </AlertDescription>
+                <Alert className="border-border/60 bg-card/50">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                    <AlertDescription className="text-xs text-muted-foreground">
+                      You can now copy this prompt or save it to your Prompts library for version
+                      control and deployment.
+                    </AlertDescription>
+                  </div>
                 </Alert>
               </>
             )}
