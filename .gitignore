@@ -5,6 +5,10 @@
 claude.md
 .claude/
 agents.md
+FRONTEND_ROADMAP.md
+planning.md
+ai-test-case-generator-planning.md
+error-boundaries-planning.md
 backend/migrations/
 
 # Byte-compiled / optimized / DLL files
@@ -153,8 +157,3 @@ docker-compose.override.yml
 *.tmp
 *.temp
 .cache/
-
-FRONTEND_ROADMAP.md
-planning.md
-ai-test-case-generator-planning.md
-error-boundaries-planning.md
