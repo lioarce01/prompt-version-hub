@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User, RoleEnum
 from ..schemas import UserCreate, UserOut, TokenOut
+from ..config import settings
 from ..utils.security import (
     get_password_hash,
     verify_password,
@@ -51,7 +52,7 @@ def login(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
+        secure=settings.is_production,  # True in production (HTTPS only), False in development
         samesite="lax",
         max_age=7 * 24 * 60 * 60  # 7 days in seconds
     )
@@ -97,7 +98,7 @@ def refresh_access_token(
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
+        secure=settings.is_production,  # True in production (HTTPS only), False in development
         samesite="lax",
         max_age=7 * 24 * 60 * 60
     )

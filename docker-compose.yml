@@ -35,8 +35,10 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-prompt_version_hub}
+      ENV: ${ENV:-development}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
-      JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN:-60}
+      JWT_ACCESS_EXPIRES_MIN: ${JWT_ACCESS_EXPIRES_MIN:-15}
+      JWT_REFRESH_EXPIRES_DAYS: ${JWT_REFRESH_EXPIRES_DAYS:-7}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
