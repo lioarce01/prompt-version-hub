@@ -4,6 +4,7 @@ from .deployment import Deployment
 from .ab import ABPolicy, ABAssignment
 from .usage import UsageEvent
 from .ai_generation import AIGeneration
+from .refresh_token import RefreshToken
 
 __all__ = [
     "User",
@@ -14,4 +15,5 @@ __all__ = [
     "ABAssignment",
     "UsageEvent",
     "AIGeneration",
+    "RefreshToken",
 ]
