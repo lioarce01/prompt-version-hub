@@ -3,6 +3,7 @@ import type { RootState } from "./store";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  credentials: "include", // Include cookies for refresh token
   prepareHeaders: (headers, { getState }) => {
     // Get token from Redux store (preferred) or localStorage (fallback)
     const stateToken = (getState() as RootState).auth.token;

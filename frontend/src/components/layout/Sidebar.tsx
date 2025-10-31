@@ -38,6 +38,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
+import { useLogoutAllMutation } from "@/features/auth/authApi";
+import { toast } from "sonner";
 import type { UserRole } from "@/types/api";
 
 const navigation = [
@@ -76,9 +78,21 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { role } = useRole();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [logoutAll, { isLoading: isLoggingOutAll }] = useLogoutAllMutation();
 
   const getUserInitials = (email?: string) =>
     email ? email.substring(0, 2).toUpperCase() : "??";
+
+  const handleLogoutAll = async () => {
+    try {
+      await logoutAll().unwrap();
+      toast.success("Logged out from all devices");
+      setShowProfileModal(false);
+      logout();
+    } catch (error) {
+      toast.error("Failed to logout from all devices");
+    }
+  };
 
   return (
     <aside
@@ -309,6 +323,21 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     Preferences
                   </h4>
                   <ThemeToggle />
+                </div>
+
+                <div className="border-t border-border/50 pt-4">
+                  <h4 className="mb-3 text-sm font-medium text-foreground">
+                    Security
+                  </h4>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start border-border bg-background/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-colors"
+                    onClick={handleLogoutAll}
+                    disabled={isLoggingOutAll}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {isLoggingOutAll ? "Logging out..." : "Logout from all devices"}
+                  </Button>
                 </div>
               </div>
             </div>

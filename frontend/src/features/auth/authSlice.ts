@@ -36,8 +36,13 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
     },
+    // Update only the token (for refresh token flow)
+    setToken: (state, action: PayloadAction<string>) => {
+      state.token = action.payload;
+      state.isAuthenticated = true;
+    },
   },
 });
 
-export const { setCredentials, logout, setUser } = authSlice.actions;
+export const { setCredentials, logout, setUser, setToken } = authSlice.actions;
 export default authSlice.reducer;

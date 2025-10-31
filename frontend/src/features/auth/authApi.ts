@@ -32,6 +32,24 @@ export const authApi = api.injectEndpoints({
       query: () => "/auth/me",
       providesTags: ["User"],
     }),
+    refreshToken: builder.mutation<AuthResponse, void>({
+      query: () => ({
+        url: "/auth/refresh",
+        method: "POST",
+      }),
+    }),
+    logout: builder.mutation<{ message: string }, void>({
+      query: () => ({
+        url: "/auth/logout",
+        method: "POST",
+      }),
+    }),
+    logoutAll: builder.mutation<{ message: string }, void>({
+      query: () => ({
+        url: "/auth/logout-all",
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -39,4 +57,7 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useGetCurrentUserQuery,
+  useRefreshTokenMutation,
+  useLogoutMutation,
+  useLogoutAllMutation,
 } = authApi;
