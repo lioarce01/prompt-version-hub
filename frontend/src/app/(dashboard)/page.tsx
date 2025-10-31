@@ -264,9 +264,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {topPrompts && topPrompts.items.length > 0 ? (
-              topPrompts.items.map((prompt) => (
+              topPrompts.items.map((prompt, index) => (
                 <div
-                  key={prompt.name}
+                  key={`${prompt.name}-${index}`}
                   className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3"
                 >
                   <div>
@@ -306,9 +306,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {experiments && experiments.items.length > 0 ? (
-              experiments.items.map((experiment) => (
+              experiments.items.map((experiment, index) => (
                 <div
-                  key={experiment.experiment}
+                  key={`${experiment.experiment}-${experiment.prompt}-${index}`}
                   className="rounded-lg border border-border/60 bg-background/40 px-4 py-3"
                 >
                   <div className="flex items-center justify-between">
@@ -325,7 +325,7 @@ export default function DashboardPage() {
                   <div className="mt-2 space-y-1">
                     {experiment.arms.map((arm) => (
                       <div
-                        key={arm.version}
+                        key={`${experiment.experiment}-v${arm.version}`}
                         className="flex items-center justify-between text-xs"
                       >
                         <span className="text-muted-foreground">
