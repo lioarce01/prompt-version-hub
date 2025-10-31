@@ -28,7 +28,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <Provider store={storeRef.current}>
         <PersistGate loading={null} persistor={persistorRef.current}>
           {children}
-          <Toaster />
+          <Toaster
+            position="top-right"
+            offset={16}
+            visibleToasts={4}
+            closeButton
+            richColors
+            expand={false}
+          />
         </PersistGate>
       </Provider>
     </ThemeProvider>
