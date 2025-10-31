@@ -8,6 +8,7 @@ import type {
 } from "@/types/kpis";
 
 export const kpisApi = api.injectEndpoints({
+  overrideExisting: false,
   endpoints: (builder) => ({
     // GET /kpis/summary - Dashboard summary metrics
     getSummary: builder.query<KpiSummary, void>({
@@ -57,9 +58,9 @@ export const kpisApi = api.injectEndpoints({
     }),
 
     // GET /kpis/experiments - Active A/B experiments
-    getExperiments: builder.query<Experiments, void>({
+    getExperimentsAnalytics: builder.query<Experiments, void>({
       query: () => "/kpis/experiments",
-      providesTags: ["Experiment"],
+      providesTags: ["Analytics"],
     }),
   }),
 });
@@ -69,5 +70,5 @@ export const {
   useGetUsageTrendQuery,
   useGetVersionVelocityQuery,
   useGetTopPromptsQuery,
-  useGetExperimentsQuery,
+  useGetExperimentsAnalyticsQuery,
 } = kpisApi;

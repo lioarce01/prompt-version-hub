@@ -19,7 +19,7 @@ from .deployment import (
     PromptInfo,
     UserInfo,
 )
-from .ab import ABPolicyIn, ABPolicyOut, ABAssignIn, ABAssignOut
+from .ab import ABPolicyIn, ABPolicyOut, ABPolicyListItem, ABAssignIn, ABAssignOut, ABStatsOut
 from .usage import UsageIn, UsageOut, AnalyticsByVersion, AnalyticsListOut
 from .kpis import (
     TotalsSummary,
@@ -63,8 +63,10 @@ __all__ = [
     "UserInfo",
     "ABPolicyIn",
     "ABPolicyOut",
+    "ABPolicyListItem",
     "ABAssignIn",
     "ABAssignOut",
+    "ABStatsOut",
     "UsageIn",
     "UsageOut",
     "AnalyticsByVersion",

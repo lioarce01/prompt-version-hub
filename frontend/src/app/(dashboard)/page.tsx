@@ -33,7 +33,7 @@ import {
   useGetUsageTrendQuery,
   useGetVersionVelocityQuery,
   useGetTopPromptsQuery,
-  useGetExperimentsQuery,
+  useGetExperimentsAnalyticsQuery,
 } from "@/features/kpis/kpisApi";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import {
@@ -57,7 +57,7 @@ export default function DashboardPage() {
     limit: 4,
     period_days: 30,
   });
-  const { data: experiments, isLoading: experimentsLoading } = useGetExperimentsQuery();
+  const { data: experiments, isLoading: experimentsLoading } = useGetExperimentsAnalyticsQuery();
 
   // Show skeleton while loading
   const isLoading = summaryLoading || trendLoading || velocityLoading || topPromptsLoading || experimentsLoading;

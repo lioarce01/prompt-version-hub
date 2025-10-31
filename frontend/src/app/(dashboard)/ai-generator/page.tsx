@@ -234,11 +234,13 @@ export default function AIGeneratorPage() {
 
       {/* Info Alert */}
       <Alert className="border-primary/30 bg-primary/5">
-        <Zap className="h-4 w-4 text-primary" />
-        <AlertDescription className="text-sm">
-          Describe your use case and let AI create a production-ready prompt template with
-          variables, best practices, and optimizations.
-        </AlertDescription>
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary flex-shrink-0" />
+          <AlertDescription className="text-sm">
+            Describe your use case and let AI create a production-ready prompt template with
+            variables, best practices, and optimizations.
+          </AlertDescription>
+        </div>
       </Alert>
 
       <div className="grid gap-6 lg:grid-cols-2">

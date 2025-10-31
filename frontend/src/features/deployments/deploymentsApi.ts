@@ -23,6 +23,7 @@ interface DeploymentHistoryResponse {
 }
 
 export const deploymentsApi = api.injectEndpoints({
+  overrideExisting: false,
   endpoints: (builder) => ({
     // Deploy a prompt to an environment
     deploy: builder.mutation<DeploymentWithPromptInfo, DeployRequest>({

@@ -5,6 +5,7 @@ import type {
 } from "@/types/ai";
 
 export const aiApi = api.injectEndpoints({
+  overrideExisting: false,
   endpoints: (builder) => ({
     generatePrompt: builder.mutation<
       PromptGenerationResponse,

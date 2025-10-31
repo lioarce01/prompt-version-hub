@@ -13,6 +13,7 @@ import type {
 } from "@/types/prompts";
 
 export const promptsApi = api.injectEndpoints({
+  overrideExisting: false,
   endpoints: (builder) => ({
     // Get list of prompts with filters
     getPrompts: builder.query<PromptListResponse, PromptFilters | void>({
