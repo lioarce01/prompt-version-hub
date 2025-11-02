@@ -131,6 +131,17 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
     );
   }
 
+  const formatBlock = (value: string | undefined | null) => {
+    if (!value) {
+      return "";
+    }
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+      return value;
+    }
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="space-y-6">
@@ -212,7 +223,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
               </Button>
             </form>
 
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2 scrollbar-slim">
               {suite.cases.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No test cases yet. Create one manually or generate with AI.
@@ -265,22 +276,22 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                       </div>
                     </div>
 
-                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-                      <div>
-                        <span className="font-medium text-foreground">Input:</span>
-                        <pre className="mt-1 overflow-x-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed">
-                          {testCase.input_text}
-                        </pre>
-                      </div>
-                      {testCase.expected_output && (
-                        <div>
-                          <span className="font-medium text-foreground">Expected:</span>
-                          <pre className="mt-1 overflow-x-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed">
-                            {testCase.expected_output}
-                          </pre>
-                        </div>
-                      )}
+                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <span className="font-medium text-foreground">Input:</span>
+                      <code className="mt-1 block max-h-56 overflow-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
+                        {formatBlock(testCase.input_text)}
+                      </code>
                     </div>
+                    {testCase.expected_output && (
+                      <div>
+                        <span className="font-medium text-foreground">Expected:</span>
+                        <code className="mt-1 block max-h-48 overflow-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
+                          {formatBlock(testCase.expected_output)}
+                        </code>
+                      </div>
+                    )}
+                  </div>
                   </div>
                 ))
               )}

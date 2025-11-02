@@ -176,13 +176,35 @@ NUMBER OF TEST CASES: {count}
     if not raw_text:
         raise RuntimeError("AI provider did not return any content")
 
-    try:
-        parsed = json.loads(raw_text)
-        if not isinstance(parsed, list):
-            raise ValueError("AI response is not a JSON array")
-    except json.JSONDecodeError as exc:
-        logger.exception("Failed to parse AI response: %s", raw_text)
-        raise RuntimeError("Failed to parse AI generated test cases") from exc
+    def _extract_json_array(text: str) -> List[dict]:
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
+        try:
+            parsed_json = json.loads(cleaned)
+            if isinstance(parsed_json, list):
+                return parsed_json
+        except json.JSONDecodeError:
+            pass
+
+        start = cleaned.find("[")
+        end = cleaned.rfind("]")
+        if start != -1 and end != -1 and end > start:
+            snippet = cleaned[start : end + 1]
+            try:
+                parsed_json = json.loads(snippet)
+                if isinstance(parsed_json, list):
+                    return parsed_json
+            except json.JSONDecodeError:
+                pass
+        raise RuntimeError("AI response was not valid JSON array")
+
+    parsed = _extract_json_array(raw_text)
 
     created_cases: List[TestCase] = []
     for item in parsed:
