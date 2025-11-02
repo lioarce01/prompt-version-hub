@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useGetVersionQuery, useGetVersionsQuery, useRollbackMutation } from "@/features/prompts/promptsApi";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +40,7 @@ export default function PromptVersionPage() {
   const promptName = params.name as string;
   const version = parseInt(params.version as string);
   const { canEdit } = useRole();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
   const { data: prompt, isLoading, error } = useGetVersionQuery({
@@ -77,6 +79,8 @@ export default function PromptVersionPage() {
   }
 
   const versions = versionsData?.items ?? [];
+  const isPromptOwner = user ? prompt.created_by === user.id : false;
+  const canManagePrompt = canEdit && isPromptOwner;
 
   const handleRollback = async (targetVersion: number) => {
     try {
@@ -147,16 +151,18 @@ export default function PromptVersionPage() {
           </div>
         </div>
 
-        {canEdit && (
+        {(canManagePrompt || canEdit) && (
           <div className="flex gap-2">
-            <Button
-              className="gap-2"
-              onClick={() => router.push(`/prompts/${promptName}?edit=true`)}
-            >
-              <Edit className="h-4 w-4" />
-              Edit Prompt
-            </Button>
-            {!prompt.active && (
+            {canManagePrompt && (
+              <Button
+                className="gap-2"
+                onClick={() => router.push(`/prompts/${promptName}?edit=true`)}
+              >
+                <Edit className="h-4 w-4" />
+                Edit Prompt
+              </Button>
+            )}
+            {canEdit && !prompt.active && (
               <Button
                 onClick={() => router.push(`/prompts/${promptName}`)}
                 className="gap-2"
@@ -165,14 +171,16 @@ export default function PromptVersionPage() {
                 View Active Version
               </Button>
             )}
-            <Button
-              variant="outline"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => setActiveTab("versions")}
-            >
-              <GitBranch className="h-4 w-4" />
-              Versions
-            </Button>
+            {canEdit && (
+              <Button
+                variant="outline"
+                className="gap-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setActiveTab("versions")}
+              >
+                <GitBranch className="h-4 w-4" />
+                Versions
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -335,7 +343,7 @@ export default function PromptVersionPage() {
                         >
                           View
                         </Button>
-                        {canEdit && !item.active && (
+                        {canManagePrompt && !item.active && (
                           <Button
                             variant="outline"
                             size="sm"

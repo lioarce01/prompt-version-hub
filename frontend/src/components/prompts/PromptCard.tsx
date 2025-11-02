@@ -14,6 +14,7 @@ import {
 import { MoreVertical, Edit, Trash2, Eye, GitBranch, Copy } from "lucide-react";
 import type { Prompt } from "@/types/prompts";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 interface PromptCardProps {
@@ -24,6 +25,10 @@ interface PromptCardProps {
 
 export function PromptCard({ prompt, onDelete, onClone }: PromptCardProps) {
   const { canEdit, canDelete } = useRole();
+  const { user } = useAuth();
+  const isOwner = user ? user.id === prompt.created_by : false;
+  const canManage = canEdit && isOwner;
+  const canDeletePrompt = canDelete && isOwner;
 
   return (
     <Card className="group hover:border-accent/50 transition-all duration-300 bg-card/50 border-border/50 backdrop-blur-sm hover:shadow-lg hover:shadow-accent/5">
@@ -64,7 +69,7 @@ export function PromptCard({ prompt, onDelete, onClone }: PromptCardProps) {
           </div>
         </div>
 
-        {(canEdit || canDelete) && (
+        {(canManage || canDeletePrompt || Boolean(onClone)) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -89,7 +94,7 @@ export function PromptCard({ prompt, onDelete, onClone }: PromptCardProps) {
                   View
                 </Link>
               </DropdownMenuItem>
-              {canEdit && (
+              {canManage && (
                 <DropdownMenuItem asChild>
                   <Link
                     href={`/prompts/${prompt.name}?edit=true`}
@@ -109,7 +114,7 @@ export function PromptCard({ prompt, onDelete, onClone }: PromptCardProps) {
                   Clone
                 </DropdownMenuItem>
               )}
-              {canDelete && onDelete && (
+              {canDeletePrompt && onDelete && (
                 <DropdownMenuItem
                   onClick={() => onDelete(prompt.name)}
                   className="cursor-pointer text-destructive focus:text-destructive"

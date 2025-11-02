@@ -7,6 +7,7 @@ import { useGetPromptQuery, useGetVersionsQuery, useRollbackMutation } from "@/f
 import { useGetDeploymentHistoryQuery } from "@/features/deployments/deploymentsApi";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +51,7 @@ export default function PromptDetailPage() {
   const searchParams = useSearchParams();
   const promptName = params.name as string;
   const { canEdit } = useRole();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -121,6 +123,9 @@ export default function PromptDetailPage() {
     );
   }
 
+  const isPromptOwner = user ? prompt.created_by === user.id : false;
+  const canManagePrompt = canEdit && isPromptOwner;
+
   const updateEditQuery = (open: boolean) => {
     const params = new URLSearchParams(searchParams.toString());
     if (open) {
@@ -189,20 +194,24 @@ export default function PromptDetailPage() {
           </div>
         </div>
 
-        {canEdit && (
+        {(canManagePrompt || canEdit) && (
           <div className="flex gap-2">
-            <Button className="gap-2" onClick={handleOpenEdit}>
-              <Edit className="h-4 w-4" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => setActiveTab("versions")}
-            >
-              <GitBranch className="h-4 w-4" />
-              Versions
-            </Button>
+            {canManagePrompt && (
+              <Button className="gap-2" onClick={handleOpenEdit}>
+                <Edit className="h-4 w-4" />
+                Edit
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="outline"
+                className="gap-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setActiveTab("versions")}
+              >
+                <GitBranch className="h-4 w-4" />
+                Versions
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -393,7 +402,7 @@ export default function PromptDetailPage() {
                         >
                           View
                         </Button>
-                        {canEdit && !version.active && (
+                        {canManagePrompt && !version.active && (
                           <Button
                             variant="outline"
                             size="sm"

@@ -21,6 +21,7 @@ import {
 import { MoreVertical, Edit, Trash2, Eye, GitBranch, Copy } from "lucide-react";
 import type { Prompt } from "@/types/prompts";
 import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PromptTableProps {
   prompts: Prompt[];
@@ -30,6 +31,8 @@ interface PromptTableProps {
 
 export function PromptTable({ prompts, onDelete, onClone }: PromptTableProps) {
   const { canEdit, canDelete } = useRole();
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
 
   if (prompts.length === 0) {
     return (
@@ -81,7 +84,12 @@ export function PromptTable({ prompts, onDelete, onClone }: PromptTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {prompts.map((prompt) => (
+            {prompts.map((prompt) => {
+              const isOwner = currentUserId !== null && currentUserId === prompt.created_by;
+              const canManage = canEdit && isOwner;
+              const canDeletePrompt = canDelete && isOwner;
+
+              return (
               <TableRow
                 key={prompt.id}
                 className="hover:bg-secondary/30 transition-colors border-border/50"
@@ -161,7 +169,7 @@ export function PromptTable({ prompts, onDelete, onClone }: PromptTableProps) {
                   })}
                 </TableCell>
                 <TableCell>
-                  {(canEdit || canDelete || onClone) && (
+                  {(canManage || canDeletePrompt || Boolean(onClone)) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -191,7 +199,7 @@ export function PromptTable({ prompts, onDelete, onClone }: PromptTableProps) {
                             Clone
                           </DropdownMenuItem>
                         )}
-                        {canEdit && (
+                        {canManage && (
                           <DropdownMenuItem asChild>
                             <Link
                               href={`/prompts/${prompt.name}?edit=true`}
@@ -202,7 +210,7 @@ export function PromptTable({ prompts, onDelete, onClone }: PromptTableProps) {
                             </Link>
                           </DropdownMenuItem>
                         )}
-                        {canDelete && onDelete && (
+                        {canDeletePrompt && onDelete && (
                           <DropdownMenuItem
                             onClick={() => onDelete(prompt.name)}
                             className="cursor-pointer text-destructive focus:text-destructive"
@@ -216,11 +224,11 @@ export function PromptTable({ prompts, onDelete, onClone }: PromptTableProps) {
                   )}
                 </TableCell>
               </TableRow>
-            ))}
+            );
+          })}
           </TableBody>
         </Table>
       </div>
     </div>
   );
 }
-

@@ -262,7 +262,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 max-h-[294px] overflow-y-auto pr-2 scrollbar-slim">
             {topPrompts && topPrompts.items.length > 0 ? (
               topPrompts.items.map((prompt, index) => (
                 <div
@@ -304,7 +304,7 @@ export default function DashboardPage() {
               Active A/B tests
             </p>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 max-h-[294px] overflow-y-auto pr-2 scrollbar-slim">
             {experiments && experiments.items.length > 0 ? (
               experiments.items.map((experiment, index) => (
                 <div

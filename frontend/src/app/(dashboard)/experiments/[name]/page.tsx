@@ -25,6 +25,7 @@ import {
 import { VariantDistributionChart } from "@/components/experiments/VariantDistributionChart";
 import { EditExperimentModal } from "@/components/experiments/EditExperimentModal";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ExperimentDetailPage() {
   const params = useParams();
@@ -33,6 +34,7 @@ export default function ExperimentDetailPage() {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const { user } = useAuth();
 
   const { data: experiment, isLoading: isLoadingExperiment } =
     useGetExperimentQuery(promptName);
@@ -88,7 +90,7 @@ export default function ExperimentDetailPage() {
     );
   }
 
-  const isOwner = experiment.created_by !== null;
+  const isOwner = user ? experiment.created_by === user.id : false;
 
   return (
     <>
