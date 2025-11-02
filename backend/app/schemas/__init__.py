@@ -47,7 +47,6 @@ from .test_case import (
     TestCaseOut,
     TestRunRequest,
     TestRunOut,
-    TestRunResult,
     TestSuiteOut,
     TestGenerationRequest,
 )
@@ -102,7 +101,6 @@ __all__ = [
     "TestCaseOut",
     "TestRunRequest",
     "TestRunOut",
-    "TestRunResult",
     "TestSuiteOut",
     "TestGenerationRequest",
 ]

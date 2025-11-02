@@ -39,31 +39,20 @@ class TestRunRequest(BaseModel):
     prompt_version: Optional[int] = None
 
 
-class TestRunResult(BaseModel):
-    output_text: Optional[str] = None
-    success: Optional[bool] = None
-    latency_ms: Optional[int] = None
-    tokens_used: Optional[int] = None
-    cost_cents: Optional[int] = None
-    error_message: Optional[str] = None
-
-
-class TestRunOut(TestRunBase, TestRunResult):
 class TestRunOut(BaseModel):
     id: int
     prompt_id: int
     prompt_version: int
     test_case_id: Optional[int] = None
     input_text: str
-    id: int
-    executed_at: datetime
-    executed_by: Optional[int] = None
     output_text: Optional[str] = None
     success: Optional[bool] = None
     latency_ms: Optional[int] = None
     tokens_used: Optional[int] = None
     cost_cents: Optional[int] = None
     error_message: Optional[str] = None
+    executed_at: datetime
+    executed_by: Optional[int] = None
 
     class Config:
         from_attributes = True
