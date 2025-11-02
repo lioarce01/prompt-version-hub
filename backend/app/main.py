@@ -9,6 +9,7 @@ from .routers import ab as ab_router
 from .routers import usage as usage_router
 from .routers import kpis as kpis_router
 from .routers import ai as ai_router
+from .routers import tests as tests_router
 from .rate_limiter import init_rate_limiter
 
 
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(usage_router.router)
     app.include_router(kpis_router.router)
     app.include_router(ai_router.router)
+    app.include_router(tests_router.router)
 
     @app.get("/")
     def root():

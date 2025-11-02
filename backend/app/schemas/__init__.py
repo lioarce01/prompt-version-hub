@@ -41,6 +41,16 @@ from .ai import (
     ToneEnum,
     OutputFormatEnum,
 )
+from .test_case import (
+    TestCaseCreate,
+    TestCaseUpdate,
+    TestCaseOut,
+    TestRunRequest,
+    TestRunOut,
+    TestRunResult,
+    TestSuiteOut,
+    TestGenerationRequest,
+)
 
 __all__ = [
     "UserCreate",
@@ -87,4 +97,12 @@ __all__ = [
     "PromptGenerationMetadata",
     "ToneEnum",
     "OutputFormatEnum",
+    "TestCaseCreate",
+    "TestCaseUpdate",
+    "TestCaseOut",
+    "TestRunRequest",
+    "TestRunOut",
+    "TestRunResult",
+    "TestSuiteOut",
+    "TestGenerationRequest",
 ]
