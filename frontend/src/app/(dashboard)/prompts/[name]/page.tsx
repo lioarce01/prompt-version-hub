@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { PromptPreview } from "@/components/prompts/PromptPreview";
 import { PromptEditor } from "@/components/prompts/PromptEditor";
+import { TestSuitePanel } from "@/components/tests/TestSuitePanel";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
   BarChart3,
   RotateCcw,
   CheckCircle2,
+  FlaskConical,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -255,6 +257,10 @@ export default function PromptDetailPage() {
             <GitBranch className="h-4 w-4" />
             Versions
           </TabsTrigger>
+          <TabsTrigger value="tests" className="gap-2">
+            <FlaskConical className="h-4 w-4" />
+            Tests
+          </TabsTrigger>
           <TabsTrigger value="deployments" className="gap-2">
             <Rocket className="h-4 w-4" />
             Deployments
@@ -425,6 +431,11 @@ export default function PromptDetailPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Tests Tab */}
+        <TabsContent value="tests" className="space-y-6">
+          <TestSuitePanel promptName={prompt.name} />
         </TabsContent>
 
         {/* Deployments Tab */}
