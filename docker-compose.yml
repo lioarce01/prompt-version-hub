@@ -1,91 +1,75 @@
+# ================================
+# Docker Compose Configuration
+# ================================
+#
+# NOTE: This file is now optional since the backend has been migrated to Supabase.
+# The frontend can run standalone using: cd frontend && npm run dev
+#
+# This file is kept for users who prefer to run the frontend in Docker.
+# ================================
+
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: prompt-hub-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-prompt_version_hub}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-prompt_version_hub}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - prompt-hub-network
-
-  backend:
+  # Next.js Frontend (Optional - can run with npm run dev instead)
+  frontend:
     build:
-      context: .
-      dockerfile: docker/backend.Dockerfile
-    container_name: prompt-hub-api
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    container_name: prompt-hub-frontend
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-prompt_version_hub}
-      ENV: ${ENV:-development}
-      JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
-      JWT_ACCESS_EXPIRES_MIN: ${JWT_ACCESS_EXPIRES_MIN:-15}
-      JWT_REFRESH_EXPIRES_DAYS: ${JWT_REFRESH_EXPIRES_DAYS:-7}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
+      # Supabase Configuration
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+      # Google AI Configuration (optional)
       GOOGLE_GENAI_API_KEY: ${GOOGLE_GENAI_API_KEY:-}
-      GOOGLE_GENAI_MODEL: ${GOOGLE_GENAI_MODEL:-gemini-2.5-flash}
-      AI_MAX_REQUESTS_PER_USER_PER_DAY: ${AI_MAX_REQUESTS_PER_USER_PER_DAY:-50}
-      AI_RATE_LIMIT_PER_IP: '${AI_RATE_LIMIT_PER_IP:-10/hour}'
+      GOOGLE_GENAI_MODEL: ${GOOGLE_GENAI_MODEL:-gemini-2.0-flash-exp}
+
+      # App Configuration
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Prompt Version Hub}
+      ENV: ${ENV:-development}
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "3000:3000"
     volumes:
-      # For development - uncomment to enable hot reload
-      # - ./backend/app:/app/app:ro
-      - backend_logs:/app/logs
+      # For development - enable hot reload
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
     networks:
       - prompt-hub-network
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Optional: pgAdmin for database management
-  # Uncomment to enable
-  # pgadmin:
-  #   image: dpage/pgadmin4:latest
-  #   container_name: prompt-hub-pgadmin
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
-  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-  #     PGADMIN_LISTEN_PORT: 80
-  #   ports:
-  #     - "${PGADMIN_PORT:-5050}:80"
-  #   volumes:
-  #     - pgadmin_data:/var/lib/pgadmin
-  #   networks:
-  #     - prompt-hub-network
-
-volumes:
-  postgres_data:
-    name: prompt-hub-postgres-data
-  backend_logs:
-    name: prompt-hub-backend-logs
-  # pgadmin_data:
-  #   name: prompt-hub-pgadmin-data
 
 networks:
   prompt-hub-network:
     name: prompt-hub-network
     driver: bridge
+
+# ================================
+# Migration Notes
+# ================================
+#
+# The previous PostgreSQL and FastAPI backend services have been removed.
+# All backend functionality is now provided by Supabase:
+#
+# - Database: Supabase PostgreSQL (managed cloud service)
+# - Authentication: Supabase Auth
+# - Storage: Supabase Storage (if needed in future)
+# - Edge Functions: Supabase Edge Functions (for AI operations)
+#
+# To run the application:
+#
+# Option 1 (Recommended): Run frontend directly
+#   cd frontend
+#   npm install
+#   npm run dev
+#
+# Option 2: Use Docker Compose
+#   docker-compose up -d
+#
+# Setup Requirements:
+# 1. Create a Supabase project at https://supabase.com
+# 2. Run the migration in supabase/migrations/00001_initial_schema.sql
+# 3. Configure .env.local with your Supabase credentials
+# 4. (Optional) Deploy Edge Functions with Supabase CLI
+#
+# See SUPABASE_MIGRATION.md for detailed setup instructions.
+# ================================
