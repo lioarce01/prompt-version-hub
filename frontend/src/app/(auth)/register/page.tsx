@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRegisterMutation } from "@/features/auth/authApi";
-import { useAppDispatch } from "@/lib/hooks";
-import { setCredentials } from "@/features/auth/authSlice";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -17,18 +14,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
-  const [register, { isLoading }] = useRegisterMutation();
+  const { register } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,28 +48,25 @@ export default function RegisterPage() {
       return;
     }
 
-    try {
-      const result = await register({ email, password }).unwrap();
+    setIsLoading(true);
 
-      // Store token in Redux (redux-persist handles localStorage)
-      // User info will be fetched by useAuth hook via /auth/me
-      dispatch(
-        setCredentials({
-          user: null, // Will be fetched from /auth/me by useAuth hook
-          token: result.access_token,
-        })
-      );
+    try {
+      await register(email, password);
 
       toast.success("Registration successful! Redirecting...");
 
       // Redirect to dashboard
       router.push("/");
       router.refresh();
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err?.data?.detail || "Registration failed. Please try again.";
+        err instanceof Error
+          ? err.message
+          : "Registration failed. Please try again.";
       setError(message);
       toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 

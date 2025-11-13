@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Save } from "lucide-react";
 import type { Prompt } from "@/types/prompts";
-import { useUpdatePromptMutation } from "@/features/prompts/promptsApi";
+import { useUpdatePromptMutation } from "@/hooks/usePrompts";
 import { PromptPreview } from "./PromptPreview";
 import { DiffViewer } from "./DiffViewer";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export function PromptEditor({
   onCancel,
   onSuccess,
 }: PromptEditorProps) {
-  const [updatePrompt, { isLoading }] = useUpdatePromptMutation();
+  const { mutateAsync: updatePrompt, isPending: isLoading } = useUpdatePromptMutation();
 
   const [template, setTemplate] = useState(prompt.template);
   const [variables, setVariables] = useState<string[]>(prompt.variables);
@@ -67,7 +67,8 @@ export function PromptEditor({
     if (!template.trim()) {
       validationErrors.template = "Template is required";
     } else if (!hasChanges) {
-      validationErrors.template = "Template must be different from current version";
+      validationErrors.template =
+        "Template must be different from current version";
     }
 
     setErrors(validationErrors);
@@ -88,17 +89,17 @@ export function PromptEditor({
           template,
           variables,
         },
-      }).unwrap();
+      });
 
       toast.success(
         `Prompt updated successfully. New version v${updatedPrompt.version} created.`,
       );
       setTemplate(updatedPrompt.template);
-      setVariables(updatedPrompt.variables);
-      onSuccess?.(updatedPrompt);
+      setVariables((updatedPrompt.variables as string[]) || []);
+      onSuccess?.(updatedPrompt as any);
     } catch (error: any) {
       const message =
-        error?.data?.detail || "Failed to update prompt. Please try again.";
+        error?.message || "Failed to update prompt. Please try again.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -135,7 +136,8 @@ export function PromptEditor({
         <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-4 py-3 text-sm text-muted-foreground">
           <AlertCircle className="h-4 w-4" />
           <p className="leading-relaxed">
-            Each edit creates a new version. Version v{prompt.version} remains accessible in the history.
+            Each edit creates a new version. Version v{prompt.version} remains
+            accessible in the history.
           </p>
         </div>
 
@@ -143,9 +145,12 @@ export function PromptEditor({
           <div className="min-w-0 space-y-6">
             <section className="space-y-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-6">
               <header className="space-y-1">
-                <h3 className="text-lg font-semibold text-foreground">Template Editor</h3>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Template Editor
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Update the prompt body and detected variables will refresh automatically.
+                  Update the prompt body and detected variables will refresh
+                  automatically.
                 </p>
               </header>
               <div className="space-y-4">
@@ -167,7 +172,9 @@ export function PromptEditor({
                     placeholder="Hello {{name}}, welcome to {{app_name}}!"
                   />
                   {errors.template && (
-                    <p className="text-xs text-destructive">{errors.template}</p>
+                    <p className="text-xs text-destructive">
+                      {errors.template}
+                    </p>
                   )}
                   <p className="text-xs text-muted-foreground">
                     Use {`{{variable}}`} syntax for dynamic values.
@@ -178,7 +185,7 @@ export function PromptEditor({
                   <div className="space-y-2">
                     <Label>Detected Variables</Label>
                     <div className="flex flex-wrap gap-2">
-                      {variables.map((variable) => (
+                      {variables.map((variable: string) => (
                         <Badge
                           key={variable}
                           variant="secondary"
@@ -233,9 +240,12 @@ export function PromptEditor({
 
           <div className="min-w-0 space-y-4 lg:max-h-[680px] lg:overflow-y-auto lg:pr-2 scrollbar-slim">
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Review & Compare</h3>
+              <h3 className="text-lg font-semibold text-foreground">
+                Review & Compare
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Inspect the live preview, see a diff, or reference the current version without leaving the editor.
+                Inspect the live preview, see a diff, or reference the current
+                version without leaving the editor.
               </p>
             </div>
 
@@ -272,7 +282,7 @@ export function PromptEditor({
                       Active Variables
                     </Label>
                     <div className="flex flex-wrap gap-2">
-                      {prompt.variables.map((variable) => (
+                      {prompt.variables.map((variable: string) => (
                         <Badge
                           key={variable}
                           variant="outline"

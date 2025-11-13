@@ -122,7 +122,12 @@ export function EnvironmentCard({
             </div>
 
             {canDeploy && (
-              <Button onClick={onDeploy} className="w-full" variant="outline" size="sm">
+              <Button
+                onClick={onDeploy}
+                className="w-full"
+                variant="outline"
+                size="sm"
+              >
                 <Rocket className="h-4 w-4 mr-2" />
                 Deploy New Version
               </Button>

@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCreateExperimentMutation } from "@/features/experiments/experimentsApi";
+import { useCreateExperimentMutation } from "@/hooks/useExperiments";
 
 interface CreateExperimentModalProps {
   open: boolean;
@@ -36,7 +36,7 @@ export function CreateExperimentModal({
     { version: "2", weight: "50" },
   ]);
 
-  const [createExperiment, { isLoading }] = useCreateExperimentMutation();
+  const { mutateAsync: createExperiment, isPending: isLoading } = useCreateExperimentMutation();
 
   const handleAddVariant = () => {
     const nextVersion = String(variants.length + 1);
@@ -54,7 +54,7 @@ export function CreateExperimentModal({
   const handleVariantChange = (
     index: number,
     field: "version" | "weight",
-    value: string
+    value: string,
   ) => {
     const updated = [...variants];
     updated[index][field] = value;
@@ -110,12 +110,12 @@ export function CreateExperimentModal({
         prompt_name: promptName.trim(),
         weights,
         is_public: isPublic,
-      }).unwrap();
+      });
 
       toast.success("Experiment created successfully");
       handleClose();
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to create experiment");
+      toast.error(error?.message || "Failed to create experiment");
     }
   };
 

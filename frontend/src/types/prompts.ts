@@ -4,10 +4,16 @@ export interface Prompt {
   template: string;
   variables: string[];
   version: number;
-  created_by: number;
+  created_by: string;
   created_at: string;
   active: boolean;
   is_public: boolean;
+  author?: {
+    id: string;
+    email: string;
+    role: "admin" | "editor" | "viewer";
+  };
+  is_owner?: boolean;
 }
 
 export interface CreatePromptRequest {
@@ -27,7 +33,7 @@ export interface PromptVersion {
   template: string;
   variables: string[];
   version: number;
-  created_by: number;
+  created_by: string;
   created_at: string;
   active: boolean;
 }

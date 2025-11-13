@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -34,7 +29,7 @@ import {
   useGetVersionVelocityQuery,
   useGetTopPromptsQuery,
   useGetExperimentsAnalyticsQuery,
-} from "@/features/kpis/kpisApi";
+} from "@/hooks/useKpis";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import {
   formatRelativeDate,
@@ -42,26 +37,53 @@ import {
   formatChartDate,
   formatChartMonth,
 } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardPage() {
+  // IMPORTANT: All hooks must be called before any early returns (Rules of Hooks)
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
+
   // Fetch all KPI data
-  const { data: summary, isLoading: summaryLoading, error: summaryError } = useGetSummaryQuery();
-  const { data: usageTrend, isLoading: trendLoading } = useGetUsageTrendQuery({
+  // Using isPending instead of isLoading - only true on initial load, not on background refetch
+  const {
+    data: summary,
+    isPending: summaryPending,
+    error: summaryError,
+  } = useGetSummaryQuery();
+  const { data: usageTrend, isPending: trendPending } = useGetUsageTrendQuery({
     period_days: 42,
     bucket: "week",
   });
-  const { data: versionVelocity, isLoading: velocityLoading } = useGetVersionVelocityQuery({
-    months: 6,
-  });
-  const { data: topPrompts, isLoading: topPromptsLoading } = useGetTopPromptsQuery({
-    limit: 4,
-    period_days: 30,
-  });
-  const { data: experiments, isLoading: experimentsLoading } = useGetExperimentsAnalyticsQuery();
+  const { data: versionVelocity, isPending: velocityPending } =
+    useGetVersionVelocityQuery({
+      months: 6,
+    });
+  const { data: topPrompts, isPending: topPromptsPending } =
+    useGetTopPromptsQuery({
+      limit: 4,
+      period_days: 30,
+    });
+  const { data: experiments, isPending: experimentsPending } =
+    useGetExperimentsAnalyticsQuery();
 
-  // Show skeleton while loading
-  const isLoading = summaryLoading || trendLoading || velocityLoading || topPromptsLoading || experimentsLoading;
-  if (isLoading) {
+  // Now we can do early returns after all hooks are called
+  if (authLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (!isAuthenticated) {
+    return <DashboardSkeleton />;
+  }
+
+  // Show skeleton only on initial load (when no data exists yet)
+  // This prevents flickering on background refetch
+  const isPending =
+    summaryPending ||
+    trendPending ||
+    velocityPending ||
+    topPromptsPending ||
+    experimentsPending;
+  if (isPending) {
     return <DashboardSkeleton />;
   }
 
@@ -106,17 +128,19 @@ export default function DashboardPage() {
   ];
 
   // Transform usage trend data for chart
-  const usageChartData = usageTrend?.points.map((point) => ({
-    week: formatChartDate(point.start),
-    executions: point.executions,
-    failures: point.failures,
-  })) || [];
+  const usageChartData =
+    usageTrend?.map((point) => ({
+      week: formatChartDate(point.period),
+      executions: point.executions,
+      failures: point.failures,
+    })) || [];
 
   // Transform version velocity data for chart
-  const velocityChartData = versionVelocity?.points.map((point) => ({
-    month: formatChartMonth(point.month),
-    releases: point.releases,
-  })) || [];
+  const velocityChartData =
+    versionVelocity?.map((point) => ({
+      month: formatChartMonth(point.month),
+      releases: point.releases,
+    })) || [];
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -263,16 +287,14 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4 max-h-[294px] overflow-y-auto pr-2 scrollbar-slim">
-            {topPrompts && topPrompts.items.length > 0 ? (
-              topPrompts.items.map((prompt, index) => (
+            {topPrompts?.items && topPrompts.items.length > 0 ? (
+              topPrompts.items.map((prompt: any, index: number) => (
                 <div
                   key={`${prompt.name}-${index}`}
                   className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3"
                 >
                   <div>
-                    <p className="font-medium text-foreground">
-                      {prompt.name}
-                    </p>
+                    <p className="font-medium text-foreground">{prompt.name}</p>
                     <p className="text-xs text-muted-foreground">
                       Last updated {formatRelativeDate(prompt.last_updated)}
                     </p>
@@ -300,13 +322,11 @@ export default function DashboardPage() {
         <Card className="border-border/60 bg-card/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-lg">Experiments Snapshot</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Active A/B tests
-            </p>
+            <p className="text-sm text-muted-foreground">Active A/B tests</p>
           </CardHeader>
           <CardContent className="space-y-3 max-h-[294px] overflow-y-auto pr-2 scrollbar-slim">
-            {experiments && experiments.items.length > 0 ? (
-              experiments.items.map((experiment, index) => (
+            {experiments && experiments.length > 0 ? (
+              experiments.map((experiment, index: number) => (
                 <div
                   key={`${experiment.experiment}-${experiment.prompt}-${index}`}
                   className="rounded-lg border border-border/60 bg-background/40 px-4 py-3"
@@ -323,7 +343,7 @@ export default function DashboardPage() {
                     </Badge>
                   </div>
                   <div className="mt-2 space-y-1">
-                    {experiment.arms.map((arm) => (
+                    {experiment.arms.map((arm: any) => (
                       <div
                         key={`${experiment.experiment}-v${arm.version}`}
                         className="flex items-center justify-between text-xs"

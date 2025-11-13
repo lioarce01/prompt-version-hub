@@ -27,7 +27,10 @@ interface ErrorBoundaryState {
  *   <YourComponent />
  * </ErrorBoundary>
  */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -40,7 +43,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to console in development
     if (process.env.NODE_ENV === "development") {
       console.error("ErrorBoundary caught an error:", error);
@@ -53,7 +56,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // });
 
     this.setState({
-      errorInfo: errorInfo.componentStack,
+      errorInfo: errorInfo.componentStack || undefined,
     });
   }
 
@@ -104,11 +107,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             {/* Actions */}
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <Button
-                onClick={this.handleReset}
-                className="gap-2"
-                size="sm"
-              >
+              <Button onClick={this.handleReset} className="gap-2" size="sm">
                 <RefreshCw className="h-4 w-4" />
                 Try Again
               </Button>

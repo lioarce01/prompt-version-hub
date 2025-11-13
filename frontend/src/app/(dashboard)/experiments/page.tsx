@@ -5,7 +5,7 @@ import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGetExperimentsQuery } from "@/features/experiments/experimentsApi";
+import { useGetExperimentsQuery } from "@/hooks/useExperiments";
 import { ExperimentCard } from "@/components/experiments/ExperimentCard";
 import { CreateExperimentModal } from "@/components/experiments/CreateExperimentModal";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,9 +15,9 @@ export default function ExperimentsPage() {
   const [filterTab, setFilterTab] = useState<"my" | "all">("my");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const { data: experiments, isLoading } = useGetExperimentsQuery({
-    includePublic: filterTab === "all",
-  });
+  const { data: experiments, isLoading } = useGetExperimentsQuery(
+    filterTab === "all",
+  );
 
   const filteredExperiments = Array.isArray(experiments)
     ? experiments.filter((exp) => {
@@ -42,10 +42,7 @@ export default function ExperimentsPage() {
             A/B test different prompt versions with weighted distribution
           </p>
         </div>
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="gap-2"
-        >
+        <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           New Experiment
         </Button>
@@ -63,7 +60,10 @@ export default function ExperimentsPage() {
           />
         </div>
 
-        <Tabs value={filterTab} onValueChange={(v) => setFilterTab(v as "my" | "all")}>
+        <Tabs
+          value={filterTab}
+          onValueChange={(v) => setFilterTab(v as "my" | "all")}
+        >
           <TabsList>
             <TabsTrigger value="my">My Experiments</TabsTrigger>
             <TabsTrigger value="all">All (including public)</TabsTrigger>
@@ -94,11 +94,9 @@ export default function ExperimentsPage() {
                 : "No experiments available"}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {filterTab === "my" && !searchQuery && (
-              <>
-                Create your first A/B test experiment to compare prompt variants
-              </>
-            )}
+            {filterTab === "my" &&
+              !searchQuery &&
+              "Create your first A/B test experiment to compare prompt variants"}
           </p>
           {filterTab === "my" && !searchQuery && (
             <Button

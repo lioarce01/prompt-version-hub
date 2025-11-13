@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCreatePromptMutation } from "@/features/prompts/promptsApi";
+import { useCreatePromptMutation } from "@/hooks/usePrompts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,14 +22,14 @@ export default function NewPromptPage() {
   const [variables, setVariables] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [createPrompt, { isLoading }] = useCreatePromptMutation();
+  const { mutateAsync: createPrompt, isPending: isLoading } = useCreatePromptMutation();
 
   // Auto-detect variables from template
   useEffect(() => {
     const matches = template.match(/\{\{(\w+)\}\}/g);
     if (matches) {
       const extractedVars = Array.from(
-        new Set(matches.map((m) => m.replace(/\{\{|\}\}/g, "")))
+        new Set(matches.map((m) => m.replace(/\{\{|\}\}/g, ""))),
       );
       setVariables(extractedVars);
     } else {
@@ -43,7 +43,8 @@ export default function NewPromptPage() {
     if (!name.trim()) {
       newErrors.name = "Name is required";
     } else if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-      newErrors.name = "Name can only contain letters, numbers, hyphens, and underscores";
+      newErrors.name =
+        "Name can only contain letters, numbers, hyphens, and underscores";
     }
 
     if (!template.trim()) {
@@ -66,12 +67,12 @@ export default function NewPromptPage() {
         name: name.trim(),
         template: template.trim(),
         variables,
-      }).unwrap();
+      });
 
       toast.success(`Prompt "${result.name}" created successfully`);
       router.push(`/prompts/${result.name}`);
-    } catch (err: any) {
-      const message = err?.data?.detail || "Failed to create prompt";
+    } catch (err) {
+      const message = (err as Error)?.message || "Failed to create prompt";
       toast.error(message);
 
       // Handle duplicate name error
@@ -160,7 +161,9 @@ export default function NewPromptPage() {
                     }`}
                   />
                   {errors.template && (
-                    <p className="text-xs text-destructive">{errors.template}</p>
+                    <p className="text-xs text-destructive">
+                      {errors.template}
+                    </p>
                   )}
                   <p className="text-xs text-muted-foreground">
                     Use {`{{variable}}`} syntax for dynamic values
@@ -172,7 +175,7 @@ export default function NewPromptPage() {
                   <div className="space-y-2">
                     <Label>Detected Variables</Label>
                     <div className="flex flex-wrap gap-2">
-                      {variables.map((variable) => (
+                      {variables.map((variable: string) => (
                         <Badge
                           key={variable}
                           variant="secondary"
@@ -199,11 +202,7 @@ export default function NewPromptPage() {
 
             {/* Submit Button */}
             <div className="flex gap-3">
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="gap-2"
-              >
+              <Button type="submit" disabled={isLoading} className="gap-2">
                 <Save className="h-4 w-4" />
                 {isLoading ? "Creating..." : "Create Prompt"}
               </Button>
@@ -217,7 +216,9 @@ export default function NewPromptPage() {
 
           {/* Right Column - Preview */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Live Preview</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              Live Preview
+            </h3>
             <PromptPreview template={template} variables={variables} />
           </div>
         </div>

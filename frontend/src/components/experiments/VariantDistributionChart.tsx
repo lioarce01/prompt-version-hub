@@ -49,9 +49,7 @@ export function VariantDistributionChart({
             <div key={version} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`h-3 w-3 rounded-full ${colorClass}`}
-                  />
+                  <div className={`h-3 w-3 rounded-full ${colorClass}`} />
                   <span className="font-medium text-foreground">
                     Version {version}
                   </span>
@@ -88,9 +86,7 @@ export function VariantDistributionChart({
               key={version}
               className="flex items-center gap-2 rounded-md border border-border bg-background/50 px-3 py-2"
             >
-              <div
-                className={`h-2.5 w-2.5 rounded-full ${colorClass}`}
-              />
+              <div className={`h-2.5 w-2.5 rounded-full ${colorClass}`} />
               <span className="text-xs font-medium text-foreground">
                 v{version}
               </span>

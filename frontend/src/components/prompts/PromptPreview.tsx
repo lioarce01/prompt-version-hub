@@ -36,7 +36,10 @@ export function PromptPreview({ template, variables }: PromptPreviewProps) {
     let result = template;
     variables.forEach((variable) => {
       const value = values[variable] || `{{${variable}}}`;
-      result = result.replace(new RegExp(`\\{\\{${variable}\\}\\}`, "g"), value);
+      result = result.replace(
+        new RegExp(`\\{\\{${variable}\\}\\}`, "g"),
+        value,
+      );
     });
     return result;
   };
@@ -59,16 +62,22 @@ export function PromptPreview({ template, variables }: PromptPreviewProps) {
             <CardTitle className="text-sm font-medium">Variables</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {variables.map((variable) => (
+            {variables.map((variable: string) => (
               <div key={variable} className="space-y-1.5">
-                <Label htmlFor={variable} className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor={variable}
+                  className="text-xs text-muted-foreground"
+                >
                   {variable}
                 </Label>
                 <Input
                   id={variable}
                   value={values[variable] || ""}
                   onChange={(e) =>
-                    setValues((prev) => ({ ...prev, [variable]: e.target.value }))
+                    setValues((prev) => ({
+                      ...prev,
+                      [variable]: e.target.value,
+                    }))
                   }
                   placeholder={`Enter ${variable}...`}
                   className="bg-background/50 border-border/50"
@@ -85,7 +94,10 @@ export function PromptPreview({ template, variables }: PromptPreviewProps) {
           <CardTitle className="text-sm font-medium">Preview</CardTitle>
           <div className="flex items-center gap-2">
             {missingVars.length > 0 && (
-              <Badge variant="outline" className="text-xs border-warning/50 text-warning">
+              <Badge
+                variant="outline"
+                className="text-xs border-warning/50 text-warning"
+              >
                 {missingVars.length} missing
               </Badge>
             )}

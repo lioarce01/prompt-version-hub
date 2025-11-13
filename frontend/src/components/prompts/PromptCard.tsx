@@ -53,7 +53,9 @@ export function PromptCard({ prompt, onDelete, onClone }: PromptCardProps) {
               variant="secondary"
               className={cn(
                 "text-xs capitalize bg-secondary/50 border border-border/40 px-2 py-0.5",
-                prompt.is_public ? "text-muted-foreground border-accent/40" : "text-foreground"
+                prompt.is_public
+                  ? "text-muted-foreground border-accent/40"
+                  : "text-foreground",
               )}
             >
               {prompt.is_public ? "Public" : "Private"}

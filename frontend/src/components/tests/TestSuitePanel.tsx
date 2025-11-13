@@ -8,8 +8,12 @@ import {
   useDeleteTestCaseMutation,
   useGenerateTestCasesMutation,
   useRunTestsMutation,
-} from "@/features/tests/testsApi";
-import type { TestCategory, CreateTestCaseRequest, TestCase } from "@/types/tests";
+} from "@/hooks/useTests";
+import type {
+  TestCategory,
+  CreateTestCaseRequest,
+  TestCase,
+} from "@/types/tests";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,18 +54,18 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
 
   const {
     data: suite,
-    isFetching,
     isLoading,
     isError,
     refetch,
   } = useGetTestSuiteQuery(promptName);
 
-  const [createCase, { isLoading: isCreating }] = useCreateTestCaseMutation();
-  const [deleteCase, { isLoading: isDeleting }] = useDeleteTestCaseMutation();
-  const [generateCases, { isLoading: isGenerating }] = useGenerateTestCasesMutation();
-  const [runTests, { isLoading: isRunning }] = useRunTestsMutation();
+  const { mutateAsync: createCase, isPending: isCreating } = useCreateTestCaseMutation();
+  const { mutateAsync: deleteCase, isPending: isDeleting } = useDeleteTestCaseMutation();
+  const { mutateAsync: generateCases, isPending: isGenerating } =
+    useGenerateTestCasesMutation();
+  const { mutateAsync: runTests, isPending: isRunning } = useRunTestsMutation();
 
-  const promptVariables = useMemo(() => suite?.prompt_variables ?? [], [suite]);
+  const promptVariables = useMemo(() => (suite?.prompt?.variables as string[]) ?? [], [suite]);
 
   const handleCreateCase = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -72,9 +76,11 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
     try {
       const payload: CreateTestCaseRequest = {
         ...newCase,
-        expected_output: newCase.expected_output?.trim() ? newCase.expected_output : undefined,
+        expected_output: newCase.expected_output?.trim()
+          ? newCase.expected_output
+          : undefined,
       };
-      await createCase({ promptName, body: payload }).unwrap();
+      await createCase({ promptName, testCase: payload });
       toast.success("Test case created");
       setNewCase({
         name: "",
@@ -83,16 +89,16 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
         category: "happy_path",
       });
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to create test case");
+      toast.error(error?.message || "Failed to create test case");
     }
   };
 
   const handleDeleteCase = async (testCase: TestCase) => {
     try {
-      await deleteCase({ id: testCase.id, promptName }).unwrap();
+      await deleteCase(testCase.id);
       toast.success("Test case deleted");
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to delete test case");
+      toast.error(error?.message || "Failed to delete test case");
     }
   };
 
@@ -100,20 +106,20 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
     let count = Number(generateCount) || 3;
     count = Math.min(Math.max(count, 1), 20);
     try {
-      await generateCases({ promptName, body: { count } }).unwrap();
+      await generateCases({ promptName, count });
       toast.success(`Generated ${count} AI test cases`);
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to generate test cases");
+      toast.error(error?.message || "Failed to generate test cases");
     }
   };
 
   const handleRunTests = async (caseIds?: number[]) => {
     try {
-      await runTests({ promptName, body: { case_ids: caseIds } }).unwrap();
+      await runTests({ promptName, testParams: { test_case_ids: caseIds } });
       toast.success(caseIds ? "Test executed" : "Test suite executed");
       await refetch();
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to run tests");
+      toast.error(error?.message || "Failed to run tests");
     }
   };
 
@@ -178,17 +184,27 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleCreateCase} className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-4">
+            <form
+              onSubmit={handleCreateCase}
+              className="grid gap-3 rounded-lg border border-border/60 bg-background/50 p-4"
+            >
               <div className="grid gap-2 sm:grid-cols-2">
                 <Input
                   placeholder="Case name"
                   value={newCase.name}
-                  onChange={(e) => setNewCase((current) => ({ ...current, name: e.target.value }))}
+                  onChange={(e) =>
+                    setNewCase((current) => ({
+                      ...current,
+                      name: e.target.value,
+                    }))
+                  }
                   required
                 />
                 <Select
                   value={newCase.category}
-                  onValueChange={(value: TestCategory) => setNewCase((current) => ({ ...current, category: value }))}
+                  onValueChange={(value: TestCategory) =>
+                    setNewCase((current) => ({ ...current, category: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Category" />
@@ -206,19 +222,33 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
               <Textarea
                 rows={4}
                 value={newCase.input_text}
-                onChange={(e) => setNewCase((current) => ({ ...current, input_text: e.target.value }))}
+                onChange={(e) =>
+                  setNewCase((current) => ({
+                    ...current,
+                    input_text: e.target.value,
+                  }))
+                }
                 placeholder="JSON input payload"
               />
 
               <Textarea
                 rows={3}
                 value={newCase.expected_output}
-                onChange={(e) => setNewCase((current) => ({ ...current, expected_output: e.target.value }))}
+                onChange={(e) =>
+                  setNewCase((current) => ({
+                    ...current,
+                    expected_output: e.target.value,
+                  }))
+                }
                 placeholder="Expected output (optional)"
               />
 
               <Button type="submit" disabled={isCreating} className="gap-2">
-                {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {isCreating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Add Test Case
               </Button>
             </form>
@@ -229,7 +259,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                   No test cases yet. Create one manually or generate with AI.
                 </p>
               ) : (
-                suite.cases.map((testCase) => (
+                suite.cases.map((testCase: any) => (
                   <div
                     key={testCase.id}
                     className="rounded-lg border border-border/60 bg-background/40 p-4"
@@ -237,16 +267,26 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-foreground">{testCase.name}</h3>
-                          <Badge variant="outline" className="text-xs capitalize">
+                          <h3 className="font-medium text-foreground">
+                            {testCase.name}
+                          </h3>
+                          <Badge
+                            variant="outline"
+                            className="text-xs capitalize"
+                          >
                             {testCase.category.replace("_", " ")}
                           </Badge>
                           {testCase.auto_generated && (
-                            <Badge variant="secondary" className="text-xs">AI</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              AI
+                            </Badge>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Added {formatDistanceToNow(new Date(testCase.created_at), { addSuffix: true })}
+                          Added{" "}
+                          {formatDistanceToNow(new Date(testCase.created_at), {
+                            addSuffix: true,
+                          })}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -276,22 +316,26 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                       </div>
                     </div>
 
-                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-                    <div>
-                      <span className="font-medium text-foreground">Input:</span>
-                      <code className="mt-1 block max-h-56 overflow-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
-                        {formatBlock(testCase.input_text)}
-                      </code>
-                    </div>
-                    {testCase.expected_output && (
+                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
                       <div>
-                        <span className="font-medium text-foreground">Expected:</span>
-                        <code className="mt-1 block max-h-48 overflow-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
-                          {formatBlock(testCase.expected_output)}
+                        <span className="font-medium text-foreground">
+                          Input:
+                        </span>
+                        <code className="mt-1 block max-h-56 overflow-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
+                          {formatBlock(testCase.input_text)}
                         </code>
                       </div>
-                    )}
-                  </div>
+                      {testCase.expected_output && (
+                        <div>
+                          <span className="font-medium text-foreground">
+                            Expected:
+                          </span>
+                          <code className="mt-1 block max-h-48 overflow-auto rounded-md bg-background/60 p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words">
+                            {formatBlock(testCase.expected_output)}
+                          </code>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
@@ -304,7 +348,11 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                 onClick={() => handleRunTests()}
                 disabled={isRunning}
               >
-                {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+                {isRunning ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4" />
+                )}
                 Run All Cases
               </Button>
             )}
@@ -320,13 +368,13 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <div>
               <p className="font-medium text-foreground">Active version</p>
-              <p>v{suite.prompt_version}</p>
+              <p>v{suite.prompt?.version || 'N/A'}</p>
             </div>
             <div>
               <p className="font-medium text-foreground">Variables</p>
               {promptVariables.length > 0 ? (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {promptVariables.map((variable) => (
+                  {promptVariables.map((variable: string) => (
                     <Badge key={variable} variant="outline" className="text-xs">
                       {variable}
                     </Badge>
@@ -339,7 +387,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
             <div>
               <p className="font-medium text-foreground">Template</p>
               <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border/60 bg-background/40 p-3 text-xs leading-relaxed">
-                {suite.prompt_template}
+                {suite.prompt?.template || 'N/A'}
               </pre>
             </div>
           </CardContent>
@@ -353,17 +401,23 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
               size="sm"
               className="gap-2"
               onClick={() => refetch()}
-              disabled={isFetching}
+              disabled={isLoading}
             >
-              {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4" />
+              )}
               Refresh
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
             {suite.runs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No executions recorded yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No executions recorded yet.
+              </p>
             ) : (
-              suite.runs.map((run) => (
+              suite.runs.map((run: any) => (
                 <div
                   key={run.id}
                   className="rounded-lg border border-border/60 bg-background/40 p-4"
@@ -381,7 +435,9 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(run.executed_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(run.executed_at), {
+                          addSuffix: true,
+                        })}
                       </p>
                     </div>
                     <Badge
@@ -392,7 +448,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                           ? "bg-success/10 text-success border-success/20"
                           : run.error_message
                             ? "bg-destructive/10 text-destructive border-destructive/20"
-                            : "bg-muted/20 text-muted-foreground"
+                            : "bg-muted/20 text-muted-foreground",
                       )}
                     >
                       {run.success === true
@@ -405,14 +461,18 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
                   <div className="mt-3 space-y-2 text-xs text-muted-foreground">
                     {run.output_text && (
                       <div>
-                        <span className="font-medium text-foreground">Output:</span>
+                        <span className="font-medium text-foreground">
+                          Output:
+                        </span>
                         <pre className="mt-1 whitespace-pre-wrap rounded-md bg-background/60 p-3 text-[11px] leading-relaxed">
                           {run.output_text}
                         </pre>
                       </div>
                     )}
                     {run.error_message && (
-                      <p className="text-destructive">Error: {run.error_message}</p>
+                      <p className="text-destructive">
+                        Error: {run.error_message}
+                      </p>
                     )}
                   </div>
                 </div>

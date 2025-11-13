@@ -8,35 +8,25 @@ import { Sidebar } from "@/components/layout/Sidebar";
 const collapsedWidth = 88;
 const expandedWidth = 256;
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuth();
-  const [isChecking, setIsChecking] = useState(true);
+  const { isAuthenticated, isLoading } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const sidebarWidth = useMemo(
     () => (isSidebarCollapsed ? collapsedWidth : expandedWidth),
-    [isSidebarCollapsed]
+    [isSidebarCollapsed],
   );
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!isAuthenticated && !token) {
-        router.replace("/login");
-      } else {
-        setIsChecking(false);
-      }
-    };
+    // Redirect to login if not authenticated (after loading completes)
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
-    const timer = setTimeout(checkAuth, 100);
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, token, router]);
-
-  if (isChecking || (!isAuthenticated && !token)) {
+  // Show loading state while checking auth
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">

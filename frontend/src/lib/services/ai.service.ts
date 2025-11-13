@@ -4,14 +4,20 @@
  * Handles AI prompt generation using Supabase Edge Functions
  */
 
-import { getSupabaseBrowserClient } from '../supabase/client';
+import { getSupabaseBrowserClient } from "../supabase/client";
 
 export interface GeneratePromptParams {
   goal: string;
   industry?: string;
   target_audience?: string;
-  tone?: 'professional' | 'casual' | 'friendly' | 'technical' | 'creative' | 'formal';
-  output_format?: 'text' | 'json' | 'markdown' | 'html' | 'code' | 'list';
+  tone?:
+    | "professional"
+    | "casual"
+    | "friendly"
+    | "technical"
+    | "creative"
+    | "formal";
+  output_format?: "text" | "json" | "markdown" | "html" | "code" | "list";
   context?: string;
   constraints?: string;
   examples?: string;
@@ -24,21 +30,28 @@ export interface GeneratePromptResponse {
     char_count: number;
     word_count: number;
     variable_count: number;
-    complexity: 'simple' | 'moderate' | 'complex';
+    complexity: "simple" | "moderate" | "complex";
   };
   suggestions: string[];
 }
 
 export class AIService {
-  private supabase = getSupabaseBrowserClient();
+  private get supabase(): any {
+    return getSupabaseBrowserClient();
+  }
 
   /**
    * Generate a prompt template using AI
    */
-  async generatePrompt(params: GeneratePromptParams): Promise<GeneratePromptResponse> {
-    const { data, error } = await this.supabase.functions.invoke('generate-prompt', {
-      body: params,
-    });
+  async generatePrompt(
+    params: GeneratePromptParams,
+  ): Promise<GeneratePromptResponse> {
+    const { data, error } = await this.supabase.functions.invoke(
+      "generate-prompt",
+      {
+        body: params,
+      },
+    );
 
     if (error) {
       throw new Error(error.message);

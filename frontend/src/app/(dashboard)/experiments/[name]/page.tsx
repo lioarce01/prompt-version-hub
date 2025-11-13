@@ -21,7 +21,7 @@ import {
   useGetExperimentQuery,
   useGetExperimentStatsQuery,
   useDeleteExperimentMutation,
-} from "@/features/experiments/experimentsApi";
+} from "@/hooks/useExperiments";
 import { VariantDistributionChart } from "@/components/experiments/VariantDistributionChart";
 import { EditExperimentModal } from "@/components/experiments/EditExperimentModal";
 import { cn } from "@/lib/utils";
@@ -43,20 +43,17 @@ export default function ExperimentDetailPage() {
   const { data: stats, isLoading: isLoadingStats } =
     useGetExperimentStatsQuery(promptName);
 
-  const [deleteExperiment, { isLoading: isDeleting }] =
+  const { mutateAsync: deleteExperiment, isPending: isDeleting } =
     useDeleteExperimentMutation();
 
   const handleDelete = async () => {
     if (!experiment) return;
 
     try {
-      await deleteExperiment({
-        id: experiment.id,
-        promptName: experiment.prompt_name
-      }).unwrap();
+      await deleteExperiment(experiment.id);
       toast.success("Experiment deleted successfully");
       router.push("/experiments");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to delete experiment");
     }
   };
@@ -75,9 +72,7 @@ export default function ExperimentDetailPage() {
     return (
       <div className="mx-auto max-w-5xl">
         <div className="rounded-lg border border-border bg-card/50 p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Experiment not found
-          </p>
+          <p className="text-sm text-muted-foreground">Experiment not found</p>
           <Button
             variant="outline"
             onClick={() => router.push("/experiments")}
@@ -119,7 +114,7 @@ export default function ExperimentDetailPage() {
                     "gap-1.5",
                     experiment.is_public
                       ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                      : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                      : "bg-gray-500/10 text-gray-400 border-gray-500/20",
                   )}
                 >
                   {experiment.is_public ? (
@@ -135,7 +130,10 @@ export default function ExperimentDetailPage() {
                   )}
                 </Badge>
                 {isOwner && (
-                  <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-500/10 text-green-400 border-green-500/20"
+                  >
                     Owner
                   </Badge>
                 )}
@@ -176,7 +174,7 @@ export default function ExperimentDetailPage() {
             <Skeleton className="h-64" />
           ) : stats && stats.total_assignments > 0 ? (
             <VariantDistributionChart
-              variants={stats.variants}
+              variants={stats.version_distribution}
               totalAssignments={stats.total_assignments}
             />
           ) : (
@@ -198,15 +196,14 @@ export default function ExperimentDetailPage() {
             Configured Weights
           </h2>
           <div className="space-y-3">
-            {Object.entries(experiment.weights)
+            {experiment.weights && Object.entries(experiment.weights as Record<string, number>)
               .sort(([a], [b]) => Number(a) - Number(b))
               .map(([version, weight]) => {
-                const total = Object.values(experiment.weights).reduce(
-                  (sum, w) => sum + w,
-                  0
-                );
+                const total = (
+                  Object.values(experiment.weights as Record<string, number>)
+                ).reduce((sum, w) => sum + w, 0);
                 const percentage =
-                  total > 0 ? Math.round((weight / total) * 100) : 0;
+                  total > 0 ? Math.round((Number(weight) / total) * 100) : 0;
 
                 return (
                   <div
@@ -218,7 +215,7 @@ export default function ExperimentDetailPage() {
                         Version {version}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Weight: {weight}
+                        Weight: {Number(weight)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -264,7 +261,7 @@ export default function ExperimentDetailPage() {
         <EditExperimentModal
           open={showEditModal}
           onOpenChange={setShowEditModal}
-          experiment={experiment}
+          experiment={experiment as any}
         />
       )}
     </>

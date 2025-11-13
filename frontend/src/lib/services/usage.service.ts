@@ -4,10 +4,10 @@
  * Handles usage tracking and analytics
  */
 
-import { getSupabaseBrowserClient } from '../supabase/client';
-import type { Database } from '../supabase/types';
+import { getSupabaseBrowserClient } from "../supabase/client";
+import type { Database } from "../supabase/types";
 
-type UsageEvent = Database['public']['Tables']['usage_events']['Row'];
+type UsageEvent = Database["public"]["Tables"]["usage_events"]["Row"];
 
 export interface RecordUsageParams {
   prompt_id: number;
@@ -19,14 +19,16 @@ export interface RecordUsageParams {
 }
 
 export class UsageService {
-  private supabase = getSupabaseBrowserClient();
+  private get supabase(): any {
+    return getSupabaseBrowserClient();
+  }
 
   /**
    * Record a usage event
    */
   async record(params: RecordUsageParams): Promise<UsageEvent> {
     const { data, error } = await this.supabase
-      .from('usage_events')
+      .from("usage_events")
       .insert({
         prompt_id: params.prompt_id,
         user_id: params.user_id || null,
@@ -48,18 +50,22 @@ export class UsageService {
   /**
    * Get analytics by version for a prompt
    */
-  async getAnalyticsByVersion(promptName: string, minVersion?: number, maxVersion?: number) {
+  async getAnalyticsByVersion(
+    promptName: string,
+    minVersion?: number,
+    maxVersion?: number,
+  ) {
     // First, get all prompts with this name
     let promptQuery = this.supabase
-      .from('prompts')
-      .select('id, version, name')
-      .eq('name', promptName);
+      .from("prompts")
+      .select("id, version, name")
+      .eq("name", promptName);
 
     if (minVersion !== undefined) {
-      promptQuery = promptQuery.gte('version', minVersion);
+      promptQuery = promptQuery.gte("version", minVersion);
     }
     if (maxVersion !== undefined) {
-      promptQuery = promptQuery.lte('version', maxVersion);
+      promptQuery = promptQuery.lte("version", maxVersion);
     }
 
     const { data: prompts, error: promptsError } = await promptQuery;
@@ -73,41 +79,57 @@ export class UsageService {
     }
 
     // Get usage events for these prompts
-    const promptIds = prompts.map(p => p.id);
+    const promptIds = prompts.map((p: any) => p.id);
 
     const { data: events, error: eventsError } = await this.supabase
-      .from('usage_events')
-      .select('prompt_id, success, cost')
-      .in('prompt_id', promptIds);
+      .from("usage_events")
+      .select("prompt_id, success, cost")
+      .in("prompt_id", promptIds);
 
     if (eventsError) {
       throw new Error(eventsError.message);
     }
 
     // Group by prompt_id and calculate stats
-    const statsByPromptId = (events || []).reduce((acc, event) => {
-      if (!acc[event.prompt_id]) {
-        acc[event.prompt_id] = {
-          count: 0,
-          successCount: 0,
-          totalCost: 0,
-        };
-      }
+    const statsByPromptId = (events || []).reduce(
+      (
+        acc: Record<
+          number,
+          { count: number; successCount: number; totalCost: number }
+        >,
+        event: any,
+      ) => {
+        if (!acc[event.prompt_id]) {
+          acc[event.prompt_id] = {
+            count: 0,
+            successCount: 0,
+            totalCost: 0,
+          };
+        }
 
-      acc[event.prompt_id].count++;
-      if (event.success) {
-        acc[event.prompt_id].successCount++;
-      }
-      if (event.cost) {
-        acc[event.prompt_id].totalCost += event.cost;
-      }
+        acc[event.prompt_id].count++;
+        if (event.success) {
+          acc[event.prompt_id].successCount++;
+        }
+        if (event.cost) {
+          acc[event.prompt_id].totalCost += event.cost;
+        }
 
-      return acc;
-    }, {} as Record<number, { count: number; successCount: number; totalCost: number }>);
+        return acc;
+      },
+      {} as Record<
+        number,
+        { count: number; successCount: number; totalCost: number }
+      >,
+    );
 
     // Map back to versions
-    const result = prompts.map(prompt => {
-      const stats = statsByPromptId[prompt.id] || { count: 0, successCount: 0, totalCost: 0 };
+    const result = prompts.map((prompt: any) => {
+      const stats = statsByPromptId[prompt.id] || {
+        count: 0,
+        successCount: 0,
+        totalCost: 0,
+      };
 
       return {
         version: prompt.version,

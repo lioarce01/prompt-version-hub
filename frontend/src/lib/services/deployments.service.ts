@@ -4,10 +4,10 @@
  * Handles all deployment-related operations using Supabase
  */
 
-import { getSupabaseBrowserClient } from '../supabase/client';
-import type { Database } from '../supabase/types';
+import { getSupabaseBrowserClient } from "../supabase/client";
+import type { Database } from "../supabase/types";
 
-type Deployment = Database['public']['Tables']['deployments']['Row'];
+type Deployment = Database["public"]["Tables"]["deployments"]["Row"];
 
 export interface CreateDeploymentParams {
   prompt_name: string;
@@ -16,7 +16,9 @@ export interface CreateDeploymentParams {
 }
 
 export class DeploymentsService {
-  private supabase = getSupabaseBrowserClient();
+  private get supabase(): any {
+    return getSupabaseBrowserClient();
+  }
 
   /**
    * Create a new deployment
@@ -25,20 +27,20 @@ export class DeploymentsService {
     const { prompt_name, version, environment } = params;
 
     // Find the prompt by name and version
-    const { data: prompt, error: promptError } = await this.supabase
-      .from('prompts')
-      .select('*')
-      .eq('name', prompt_name)
-      .eq('version', version)
+    const { data: prompt, error: promptError } = await (
+      this.supabase.from("prompts") as any
+    )
+      .select("*")
+      .eq("name", prompt_name)
+      .eq("version", version)
       .single();
 
     if (promptError || !prompt) {
-      throw new Error('Prompt not found');
+      throw new Error("Prompt not found");
     }
 
     // Create the deployment
-    const { data, error } = await this.supabase
-      .from('deployments')
+    const { data, error } = await (this.supabase.from("deployments") as any)
       .insert({
         prompt_id: prompt.id,
         environment,
@@ -46,7 +48,7 @@ export class DeploymentsService {
       })
       .select(`
         *,
-        prompt:prompts(*,author:users!prompts_created_by_fkey(id,email,role)),
+        prompt:prompts(*),
         user:users!deployments_deployed_by_fkey(id,email,role)
       `)
       .single();
@@ -61,16 +63,19 @@ export class DeploymentsService {
   /**
    * Get current deployment for an environment
    */
-  async getCurrentDeployment(environment: string, userId: string, promptName?: string) {
-    let query = this.supabase
-      .from('deployments')
+  async getCurrentDeployment(
+    environment: string,
+    userId: string,
+    promptName?: string,
+  ) {
+    let query = (this.supabase.from("deployments") as any)
       .select(`
         *,
-        prompt:prompts(*,author:users!prompts_created_by_fkey(id,email,role)),
+        prompt:prompts(*),
         user:users!deployments_deployed_by_fkey(id,email,role)
       `)
-      .eq('environment', environment)
-      .order('deployed_at', { ascending: false })
+      .eq("environment", environment)
+      .order("deployed_at", { ascending: false })
       .limit(1);
 
     if (promptName) {
@@ -87,7 +92,7 @@ export class DeploymentsService {
 
     const { data, error } = await query.single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== "PGRST116") {
       throw new Error(error.message);
     }
 
@@ -97,18 +102,21 @@ export class DeploymentsService {
   /**
    * Get deployment history for an environment
    */
-  async getHistory(environment: string, userId: string, params: { limit?: number; offset?: number; promptName?: string } = {}) {
+  async getHistory(
+    environment: string,
+    userId: string,
+    params: { limit?: number; offset?: number; promptName?: string } = {},
+  ) {
     const { limit = 20, offset = 0, promptName } = params;
 
-    const { data, error } = await this.supabase
-      .from('deployments')
+    const { data, error } = await (this.supabase.from("deployments") as any)
       .select(`
         *,
-        prompt:prompts(*,author:users!prompts_created_by_fkey(id,email,role)),
+        prompt:prompts(*),
         user:users!deployments_deployed_by_fkey(id,email,role)
       `)
-      .eq('environment', environment)
-      .order('deployed_at', { ascending: false })
+      .eq("environment", environment)
+      .order("deployed_at", { ascending: false })
       .range(offset, offset + limit);
 
     if (error) {

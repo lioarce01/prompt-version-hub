@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useGetVersionQuery, useGetVersionsQuery, useRollbackMutation } from "@/features/prompts/promptsApi";
+import {
+  useGetVersionQuery,
+  useGetVersionsQuery,
+  useRollbackMutation,
+} from "@/hooks/usePrompts";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -38,21 +42,22 @@ export default function PromptVersionPage() {
   const params = useParams();
   const router = useRouter();
   const promptName = params.name as string;
-  const version = parseInt(params.version as string);
+  const version = parseInt(params.version as string, 10);
   const { canEdit } = useRole();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: prompt, isLoading, error } = useGetVersionQuery({
-    name: promptName,
-    version: version,
-  });
+  const {
+    data: prompt,
+    isLoading,
+    error,
+  } = useGetVersionQuery(promptName, version);
   const {
     data: versionsData,
     isLoading: versionsLoading,
     isError: versionsError,
   } = useGetVersionsQuery(promptName);
-  const [rollback, { isLoading: isRollingBack }] = useRollbackMutation();
+  const { mutateAsync: rollback, isPending: isRollingBack } = useRollbackMutation();
 
   if (isLoading) {
     return (
@@ -87,14 +92,13 @@ export default function PromptVersionPage() {
       const result = await rollback({
         name: promptName,
         version: targetVersion,
-      }).unwrap();
+      });
       toast.success(
         `Rolled back to version ${targetVersion}. New version ${result.version} created.`,
       );
       router.push(`/prompts/${promptName}`);
     } catch (err: any) {
-      const message =
-        err?.data?.detail || "Failed to rollback. Please try again.";
+      const message = err?.message || "Failed to rollback. Please try again.";
       toast.error(message);
     }
   };
@@ -106,14 +110,20 @@ export default function PromptVersionPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Link href="/prompts">
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-muted-foreground hover:text-foreground"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-foreground">{prompt.name}</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              {prompt.name}
+            </h1>
             <Badge
               variant="secondary"
               className="bg-secondary/50 text-muted-foreground"
@@ -186,7 +196,11 @@ export default function PromptVersionPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="bg-secondary/50 border border-border/50">
           <TabsTrigger value="overview" className="gap-2">
             <Code className="h-4 w-4" />
@@ -235,9 +249,9 @@ export default function PromptVersionPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {prompt.variables.length > 0 ? (
+                {prompt.variables && Array.isArray(prompt.variables) && prompt.variables.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {prompt.variables.map((variable) => (
+                    {(prompt.variables as string[]).map((variable: string) => (
                       <Badge
                         key={variable}
                         variant="secondary"
@@ -263,7 +277,7 @@ export default function PromptVersionPage() {
             </h3>
             <PromptPreview
               template={prompt.template}
-              variables={prompt.variables}
+              variables={(prompt.variables as string[]) || []}
             />
           </div>
         </TabsContent>
@@ -290,7 +304,7 @@ export default function PromptVersionPage() {
                 </div>
               ) : versions.length > 0 ? (
                 <div className="space-y-3">
-                  {versions.map((item) => (
+                  {versions.map((item: any) => (
                     <div
                       key={item.id}
                       className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4 transition-colors hover:bg-background/80"
@@ -301,8 +315,8 @@ export default function PromptVersionPage() {
                             variant="secondary"
                             className="bg-secondary/50 text-muted-foreground"
                           >
-                            <GitBranch className="mr-1 h-3 w-3" />
-                            v{item.version}
+                            <GitBranch className="mr-1 h-3 w-3" />v
+                            {item.version}
                           </Badge>
                           {item.active && (
                             <Badge

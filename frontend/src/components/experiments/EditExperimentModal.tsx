@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUpdateExperimentMutation } from "@/features/experiments/experimentsApi";
+import { useUpdateExperimentMutation } from "@/hooks/useExperiments";
 
 interface EditExperimentModalProps {
   open: boolean;
@@ -35,12 +35,12 @@ export function EditExperimentModal({
   const [isPublic, setIsPublic] = useState(experiment.is_public);
   const [variants, setVariants] = useState<Variant[]>([]);
 
-  const [updateExperiment, { isLoading }] = useUpdateExperimentMutation();
+  const { mutateAsync: updateExperiment, isPending: isLoading } = useUpdateExperimentMutation();
 
   // Initialize variants from experiment data
   useEffect(() => {
-    if (experiment) {
-      const initialVariants = Object.entries(experiment.weights)
+    if (experiment && experiment.weights) {
+      const initialVariants = Object.entries(experiment.weights as Record<string, number>)
         .sort(([a], [b]) => Number(a) - Number(b))
         .map(([version, weight]) => ({
           version,
@@ -68,7 +68,7 @@ export function EditExperimentModal({
   const handleVariantChange = (
     index: number,
     field: "version" | "weight",
-    value: string
+    value: string,
   ) => {
     const updated = [...variants];
     updated[index][field] = value;
@@ -119,12 +119,12 @@ export function EditExperimentModal({
         prompt_name: experiment.prompt_name,
         weights,
         is_public: isPublic,
-      }).unwrap();
+      });
 
       toast.success("Experiment updated successfully");
       onOpenChange(false);
     } catch (error: any) {
-      toast.error(error?.data?.detail || "Failed to update experiment");
+      toast.error(error?.message || "Failed to update experiment");
     }
   };
 

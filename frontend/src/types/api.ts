@@ -17,7 +17,7 @@ export interface ApiError {
 export type UserRole = "admin" | "editor" | "viewer";
 
 export interface User {
-  id: number;
+  id: string | number; // string for Supabase (UUID), number for legacy API
   email: string;
   role: UserRole;
   created_at: string;
@@ -42,8 +42,8 @@ export interface RegisterRequest {
 export interface ABPolicy {
   id: number;
   prompt_name: string;
-  weights: Record<string, number>; // version: weight (e.g., {"1": 50, "2": 50})
-  created_by: number | null;
+  weights: Record<string, number> | null; // version: weight (e.g., {"1": 50, "2": 50})
+  created_by: string | null;
   is_public: boolean;
   created_at: string;
   updated_at: string;
@@ -55,6 +55,7 @@ export interface ABPolicyListItem {
   weights: Record<string, number>;
   is_public: boolean;
   created_at: string;
+  created_by: string | null;
   is_owner: boolean; // Computed: true if current user owns it
 }
 
@@ -80,8 +81,11 @@ export interface ABAssignmentInput {
 export interface ABStats {
   experiment_name: string;
   total_assignments: number;
-  variants: Record<string, {
-    count: number;
-    percentage: number;
-  }>;
+  variants: Record<
+    string,
+    {
+      count: number;
+      percentage: number;
+    }
+  >;
 }

@@ -38,7 +38,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
-import { useLogoutAllMutation } from "@/features/auth/authApi";
 import { toast } from "sonner";
 import type { UserRole } from "@/types/api";
 
@@ -78,19 +77,21 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { role } = useRole();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [logoutAll, { isLoading: isLoggingOutAll }] = useLogoutAllMutation();
+  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
   const getUserInitials = (email?: string) =>
     email ? email.substring(0, 2).toUpperCase() : "??";
 
   const handleLogoutAll = async () => {
     try {
-      await logoutAll().unwrap();
-      toast.success("Logged out from all devices");
+      setIsLoggingOutAll(true);
+      await logout();
+      toast.success("Logged out successfully");
       setShowProfileModal(false);
-      logout();
     } catch (error) {
-      toast.error("Failed to logout from all devices");
+      toast.error("Failed to logout");
+    } finally {
+      setIsLoggingOutAll(false);
     }
   };
 
@@ -105,7 +106,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             href="/"
             className={cn(
               "flex flex-1 items-center gap-2 text-sm font-semibold tracking-tight transition-opacity hover:opacity-80",
-              isCollapsed ? "justify-center" : ""
+              isCollapsed ? "justify-center" : "",
             )}
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
@@ -159,14 +160,16 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   isCollapsed ? "justify-center" : "gap-3",
                   isActive
                     ? "bg-secondary text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span
                   className={cn(
                     "whitespace-nowrap transition-[margin,opacity,width] duration-200",
-                    isCollapsed ? "ml-0 w-0 overflow-hidden opacity-0" : "opacity-100"
+                    isCollapsed
+                      ? "ml-0 w-0 overflow-hidden opacity-0"
+                      : "opacity-100",
                   )}
                 >
                   {item.name}
@@ -185,13 +188,13 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   className={cn(
                     "group flex w-full min-h-[60px] items-center gap-3 rounded-lg px-3 py-3 text-left text-sm transition-colors",
                     "hover:bg-secondary/50",
-                    isCollapsed ? "justify-center" : "justify-between"
+                    isCollapsed ? "justify-center" : "justify-between",
                   )}
                 >
                   <div
                     className={cn(
                       "flex w-full items-center gap-3",
-                      isCollapsed ? "justify-center" : "justify-start"
+                      isCollapsed ? "justify-center" : "justify-start",
                     )}
                   >
                     <Avatar className="h-8 w-8 shrink-0 bg-gradient-to-br from-blue-500 to-purple-600">
@@ -202,7 +205,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     <div
                       className={cn(
                         "flex min-w-0 flex-1 flex-col justify-center space-y-1",
-                        isCollapsed ? "hidden" : ""
+                        isCollapsed ? "hidden" : "",
                       )}
                     >
                       <span className="truncate text-sm font-medium text-foreground">
@@ -212,7 +215,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                         variant="outline"
                         className={cn(
                           "w-fit max-w-full truncate capitalize font-normal",
-                          getRoleBadgeClass(role)
+                          getRoleBadgeClass(role),
                         )}
                       >
                         {role ?? "viewer"}
@@ -222,7 +225,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                       <ChevronDown
                         className={cn(
                           "ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
-                          dropdownOpen ? "rotate-180" : ""
+                          dropdownOpen ? "rotate-180" : "",
                         )}
                       />
                     )}
@@ -242,7 +245,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     variant="outline"
                     className={cn(
                       "w-fit capitalize font-normal",
-                      getRoleBadgeClass(role)
+                      getRoleBadgeClass(role),
                     )}
                   >
                     {role ?? "viewer"}
@@ -273,7 +276,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
           <DialogContent className="bg-background border-border">
             <DialogHeader>
-              <DialogTitle className="text-foreground">Profile Settings</DialogTitle>
+              <DialogTitle className="text-foreground">
+                Profile Settings
+              </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 Manage your account settings and preferences
               </DialogDescription>
@@ -286,12 +291,14 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold text-foreground">{user.email}</h3>
+                  <h3 className="font-semibold text-foreground">
+                    {user.email}
+                  </h3>
                   <Badge
                     variant="outline"
                     className={cn(
                       "mt-1.5 capitalize font-normal",
-                      getRoleBadgeClass(role)
+                      getRoleBadgeClass(role),
                     )}
                   >
                     {role ?? "viewer"}
@@ -336,7 +343,9 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                     disabled={isLoggingOutAll}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    {isLoggingOutAll ? "Logging out..." : "Logout from all devices"}
+                    {isLoggingOutAll
+                      ? "Logging out..."
+                      : "Logout from all devices"}
                   </Button>
                 </div>
               </div>

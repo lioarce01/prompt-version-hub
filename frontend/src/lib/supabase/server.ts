@@ -5,9 +5,9 @@
  * API routes, and server actions.
  */
 
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import type { Database } from './types';
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import type { Database } from "./types";
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -32,7 +32,7 @@ export async function getSupabaseServerClient() {
           }
         },
       },
-    }
+    },
   );
 }
 
@@ -61,6 +61,6 @@ export async function getSupabaseAdminClient() {
           }
         },
       },
-    }
+    },
   );
 }

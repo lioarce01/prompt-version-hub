@@ -77,7 +77,11 @@ export default function DashboardError({
             Try Again
           </Button>
           <Link href="/">
-            <Button variant="outline" size="sm" className="w-full gap-2 sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 sm:w-auto"
+            >
               <Home className="h-4 w-4" />
               Go to Dashboard
             </Button>
@@ -86,9 +90,7 @@ export default function DashboardError({
 
         {/* Additional help */}
         <div className="space-y-2 border-t border-border/60 pt-4">
-          <p className="text-xs text-muted-foreground">
-            You can also try:
-          </p>
+          <p className="text-xs text-muted-foreground">You can also try:</p>
           <div className="flex flex-wrap justify-center gap-2">
             <Link href="/prompts">
               <Button variant="ghost" size="sm" className="text-xs">

@@ -4,11 +4,11 @@
  * Handles all A/B testing operations using Supabase
  */
 
-import { getSupabaseBrowserClient } from '../supabase/client';
-import type { Database } from '../supabase/types';
+import { getSupabaseBrowserClient } from "../supabase/client";
+import type { Database } from "../supabase/types";
 
-type ABPolicy = Database['public']['Tables']['ab_policies']['Row'];
-type ABAssignment = Database['public']['Tables']['ab_assignments']['Row'];
+type ABPolicy = Database["public"]["Tables"]["ab_policies"]["Row"];
+type ABAssignment = Database["public"]["Tables"]["ab_assignments"]["Row"];
 
 export interface SetPolicyParams {
   prompt_name: string;
@@ -23,7 +23,9 @@ export interface AssignVariantParams {
 }
 
 export class ABService {
-  private supabase = getSupabaseBrowserClient();
+  private get supabase(): any {
+    return getSupabaseBrowserClient();
+  }
 
   /**
    * Create or update an A/B testing policy
@@ -34,26 +36,24 @@ export class ABService {
     // Validate weights (should sum to ~1.0 or 100)
     const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
     if (Math.abs(totalWeight - 1.0) > 0.01 && Math.abs(totalWeight - 100) > 1) {
-      throw new Error('Weights must sum to 1.0 or 100');
+      throw new Error("Weights must sum to 1.0 or 100");
     }
 
     // Check if policy already exists
-    const { data: existing } = await this.supabase
-      .from('ab_policies')
-      .select('*')
-      .eq('prompt_name', prompt_name)
-      .eq('created_by', userId)
+    const { data: existing } = await (this.supabase.from("ab_policies") as any)
+      .select("*")
+      .eq("prompt_name", prompt_name)
+      .eq("created_by", userId)
       .single();
 
     if (existing) {
       // Update existing policy
-      const { data, error } = await this.supabase
-        .from('ab_policies')
+      const { data, error } = await (this.supabase.from("ab_policies") as any)
         .update({
           weights: weights as any,
           is_public,
         })
-        .eq('id', existing.id)
+        .eq("id", existing.id)
         .select()
         .single();
 
@@ -64,8 +64,7 @@ export class ABService {
       return data;
     } else {
       // Create new policy
-      const { data, error } = await this.supabase
-        .from('ab_policies')
+      const { data, error } = await (this.supabase.from("ab_policies") as any)
         .insert({
           prompt_name,
           weights: weights as any,
@@ -87,17 +86,17 @@ export class ABService {
    * Get all policies accessible by the user
    */
   async getPolicies(userId: string, includePublic = true) {
-    let query = this.supabase
-      .from('ab_policies')
-      .select('*');
+    let query = (this.supabase.from("ab_policies") as any).select("*");
 
     if (includePublic) {
       query = query.or(`created_by.eq.${userId},is_public.eq.true`);
     } else {
-      query = query.eq('created_by', userId);
+      query = query.eq("created_by", userId);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
 
     if (error) {
       throw new Error(error.message);
@@ -109,15 +108,17 @@ export class ABService {
   /**
    * Get a specific policy by prompt name
    */
-  async getPolicyByName(promptName: string, userId: string): Promise<ABPolicy | null> {
-    const { data, error } = await this.supabase
-      .from('ab_policies')
-      .select('*')
-      .eq('prompt_name', promptName)
+  async getPolicyByName(
+    promptName: string,
+    userId: string,
+  ): Promise<ABPolicy | null> {
+    const { data, error } = await (this.supabase.from("ab_policies") as any)
+      .select("*")
+      .eq("prompt_name", promptName)
       .or(`created_by.eq.${userId},is_public.eq.true`)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== "PGRST116") {
       throw new Error(error.message);
     }
 
@@ -128,11 +129,10 @@ export class ABService {
    * Delete a policy
    */
   async deletePolicy(policyId: number, userId: string): Promise<boolean> {
-    const { error } = await this.supabase
-      .from('ab_policies')
+    const { error } = await (this.supabase.from("ab_policies") as any)
       .delete()
-      .eq('id', policyId)
-      .eq('created_by', userId);
+      .eq("id", policyId)
+      .eq("created_by", userId);
 
     if (error) {
       return false;
@@ -144,16 +144,20 @@ export class ABService {
   /**
    * Assign a variant to a user based on the policy
    */
-  async assign(currentUserId: string, params: AssignVariantParams): Promise<number> {
+  async assign(
+    currentUserId: string,
+    params: AssignVariantParams,
+  ): Promise<number> {
     const { experiment_name, prompt_name, user_id } = params;
 
     // Check if assignment already exists
-    const { data: existing } = await this.supabase
-      .from('ab_assignments')
-      .select('*')
-      .eq('experiment_name', experiment_name)
-      .eq('prompt_name', prompt_name)
-      .eq('user_id', user_id)
+    const { data: existing } = await (
+      this.supabase.from("ab_assignments") as any
+    )
+      .select("*")
+      .eq("experiment_name", experiment_name)
+      .eq("prompt_name", prompt_name)
+      .eq("user_id", user_id)
       .single();
 
     if (existing) {
@@ -163,7 +167,7 @@ export class ABService {
     // Get the policy
     const policy = await this.getPolicyByName(prompt_name, currentUserId);
     if (!policy) {
-      throw new Error('Policy not found');
+      throw new Error("Policy not found");
     }
 
     // Randomly assign a version based on weights
@@ -184,8 +188,7 @@ export class ABService {
     }
 
     // Create the assignment
-    const { data, error } = await this.supabase
-      .from('ab_assignments')
+    const { data, error } = await (this.supabase.from("ab_assignments") as any)
       .insert({
         experiment_name,
         prompt_name,
@@ -207,20 +210,24 @@ export class ABService {
    */
   async getExperimentStats(experimentName: string, userId: string) {
     // Get all assignments for this experiment
-    const { data: assignments, error: assignmentsError } = await this.supabase
-      .from('ab_assignments')
-      .select('*')
-      .eq('experiment_name', experimentName);
+    const { data: assignments, error: assignmentsError } = await (
+      this.supabase.from("ab_assignments") as any
+    )
+      .select("*")
+      .eq("experiment_name", experimentName);
 
     if (assignmentsError) {
       throw new Error(assignmentsError.message);
     }
 
     // Group by version and count
-    const versionCounts = (assignments || []).reduce((acc, a) => {
-      acc[a.version] = (acc[a.version] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
+    const versionCounts = (assignments || []).reduce(
+      (acc: Record<number, number>, a: ABAssignment) => {
+        acc[a.version] = (acc[a.version] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>,
+    );
 
     const totalAssignments = assignments?.length || 0;
 

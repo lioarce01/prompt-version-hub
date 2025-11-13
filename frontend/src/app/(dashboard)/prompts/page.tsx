@@ -6,7 +6,7 @@ import {
   useGetPromptsQuery,
   useDeletePromptMutation,
   useClonePromptMutation,
-} from "@/features/prompts/promptsApi";
+} from "@/hooks/usePrompts";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,19 +94,20 @@ export default function PromptsPage() {
     };
   }, [activeFilter, hubVisibility, offset, searchQuery, sortBy]);
 
-  const { data, isLoading, isFetching, error } = useGetPromptsQuery(queryParams);
-  const [deletePrompt, { isLoading: isDeleting }] = useDeletePromptMutation();
-  const [clonePrompt, { isLoading: isCloning }] = useClonePromptMutation();
+  const { data, isLoading, isFetching, error } =
+    useGetPromptsQuery(queryParams);
+  const { mutateAsync: deletePrompt, isPending: isDeleting } = useDeletePromptMutation();
+  const { mutateAsync: clonePrompt, isPending: isCloning } = useClonePromptMutation();
 
   const handleDelete = async () => {
     if (!deletePromptName) return;
 
     try {
-      await deletePrompt(deletePromptName).unwrap();
+      await deletePrompt(deletePromptName);
       toast.success(`Prompt "${deletePromptName}" deleted successfully`);
       setDeletePromptName(null);
     } catch (err: any) {
-      toast.error(err?.data?.detail || "Failed to delete prompt");
+      toast.error(err?.message || "Failed to delete prompt");
     }
   };
 
@@ -115,10 +116,10 @@ export default function PromptsPage() {
       return;
     }
     try {
-      await clonePrompt({ name: prompt.name }).unwrap();
+      await clonePrompt({ name: prompt.name });
       toast.success(`Prompt "${prompt.name}" cloned to your workspace`);
     } catch (err: any) {
-      toast.error(err?.data?.detail || "Failed to clone prompt");
+      toast.error(err?.message || "Failed to clone prompt");
     }
   };
 
@@ -155,9 +156,12 @@ export default function PromptsPage() {
       <div className="rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Prompt Hub</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              Prompt Hub
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Browse public prompts or filter the ones you have shared with the community.
+              Browse public prompts or filter the ones you have shared with the
+              community.
             </p>
           </div>
           <div className="flex gap-2 rounded-lg border border-border/40 bg-background/50 p-1 text-sm">
@@ -191,7 +195,9 @@ export default function PromptsPage() {
               }}
             >
               <Badge
-                variant={hubVisibility === "my-public" ? "secondary" : "outline"}
+                variant={
+                  hubVisibility === "my-public" ? "secondary" : "outline"
+                }
                 className={
                   hubVisibility === "my-public"
                     ? "h-5 px-2 shrink-0 rounded-full uppercase"
@@ -308,7 +314,10 @@ export default function PromptsPage() {
           }
         >
           {HUB_SKELETON_ITEMS.map((item) => (
-            <Skeleton key={`prompts-skeleton-${item}`} className="h-40 w-full bg-secondary/20" />
+            <Skeleton
+              key={`prompts-skeleton-${item}`}
+              className="h-40 w-full bg-secondary/20"
+            />
           ))}
         </div>
       )}
@@ -319,35 +328,38 @@ export default function PromptsPage() {
         </div>
       )}
 
-      {!isLoading && !isFetching && !error && (data?.items.length ?? 0) === 0 && (
-        <div className="rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm p-12 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
-            <Plus className="h-6 w-6 text-muted-foreground" />
+      {!isLoading &&
+        !isFetching &&
+        !error &&
+        (data?.items.length ?? 0) === 0 && (
+          <div className="rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm p-12 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
+              <Plus className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">
+              No prompts yet
+            </h3>
+            <p className="text-foreground/70 mb-4">
+              {searchQuery
+                ? "No prompts match your search."
+                : "Get started by creating your first prompt."}
+            </p>
+            {canEdit && !searchQuery && (
+              <Button asChild>
+                <Link href="/prompts/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Prompt
+                </Link>
+              </Button>
+            )}
           </div>
-          <h3 className="text-lg font-semibold mb-2 text-foreground">
-            No prompts yet
-          </h3>
-          <p className="text-foreground/70 mb-4">
-            {searchQuery
-              ? "No prompts match your search."
-              : "Get started by creating your first prompt."}
-          </p>
-          {canEdit && !searchQuery && (
-            <Button asChild>
-              <Link href="/prompts/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Prompt
-              </Link>
-            </Button>
-          )}
-        </div>
-      )}
+        )}
 
       {!isLoading && !isFetching && !error && data && data.items.length > 0 && (
         <>
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.items.map((prompt) => (
+              {data.items.map((prompt: any) => (
                 <PromptCard
                   key={prompt.id}
                   prompt={prompt}
@@ -421,9 +433,7 @@ export default function PromptsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
@@ -437,5 +447,3 @@ export default function PromptsPage() {
     </div>
   );
 }
-
-

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useGetPromptsQuery, useGetVersionsQuery } from "@/features/prompts/promptsApi";
-import { useDeployMutation } from "@/features/deployments/deploymentsApi";
+import { useGetPromptsQuery, useGetVersionsQuery } from "@/hooks/usePrompts";
+import { useCreateDeploymentMutation } from "@/hooks/useDeployments";
 import {
   Dialog,
   DialogContent,
@@ -41,9 +41,15 @@ export function DeployModal({
   defaultPromptName,
   defaultVersion,
 }: DeployModalProps) {
-  const [selectedPromptName, setSelectedPromptName] = useState<string>(defaultPromptName || "");
-  const [selectedVersion, setSelectedVersion] = useState<string>(defaultVersion?.toString() || "");
-  const [selectedEnvironment, setSelectedEnvironment] = useState<Environment>(defaultEnvironment || "dev");
+  const [selectedPromptName, setSelectedPromptName] = useState<string>(
+    defaultPromptName || "",
+  );
+  const [selectedVersion, setSelectedVersion] = useState<string>(
+    defaultVersion?.toString() || "",
+  );
+  const [selectedEnvironment, setSelectedEnvironment] = useState<Environment>(
+    defaultEnvironment || "dev",
+  );
   const isDeployingRef = useRef(false);
 
   const { data: promptsData, isLoading: promptsLoading } = useGetPromptsQuery({
@@ -54,12 +60,10 @@ export function DeployModal({
     limit: 100,
   });
 
-  const { data: versionsData, isLoading: versionsLoading } = useGetVersionsQuery(
-    selectedPromptName,
-    { skip: !selectedPromptName }
-  );
+  const { data: versionsData, isLoading: versionsLoading } =
+    useGetVersionsQuery(selectedPromptName || "");
 
-  const [deploy, { isLoading: isDeploying }] = useDeployMutation();
+  const { mutateAsync: deploy, isPending: isDeploying } = useCreateDeploymentMutation();
 
   // Reset form when modal opens with defaults
   useEffect(() => {
@@ -72,9 +76,13 @@ export function DeployModal({
 
   // Auto-select version if only one prompt is selected
   useEffect(() => {
-    if (versionsData?.items && versionsData.items.length > 0 && !selectedVersion) {
+    if (
+      versionsData?.items &&
+      versionsData.items.length > 0 &&
+      !selectedVersion
+    ) {
       // Select the active version by default
-      const activeVersion = versionsData.items.find((v) => v.active);
+      const activeVersion = versionsData.items.find((v: any) => v.active);
       if (activeVersion) {
         setSelectedVersion(activeVersion.version.toString());
       }
@@ -99,17 +107,17 @@ export function DeployModal({
         prompt_name: selectedPromptName,
         version: parseInt(selectedVersion, 10),
         environment: selectedEnvironment,
-      }).unwrap();
+      });
 
       // Close modal first to prevent double renders
       onOpenChange(false);
 
       // Show success toast after closing to avoid duplicate in Strict Mode
       toast.success(
-        `Successfully deployed ${selectedPromptName} v${selectedVersion} to ${selectedEnvironment}`
+        `Successfully deployed ${selectedPromptName} v${selectedVersion} to ${selectedEnvironment}`,
       );
     } catch (error: any) {
-      const message = error?.data?.detail || "Failed to deploy. Please try again.";
+      const message = error?.message || "Failed to deploy. Please try again.";
       toast.error(message);
     } finally {
       // Reset flag after a small delay
@@ -119,7 +127,8 @@ export function DeployModal({
     }
   };
 
-  const canDeploy = selectedPromptName && selectedVersion && selectedEnvironment;
+  const canDeploy =
+    selectedPromptName && selectedVersion && selectedEnvironment;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -150,7 +159,7 @@ export function DeployModal({
                 <SelectValue placeholder="Select a prompt" />
               </SelectTrigger>
               <SelectContent>
-                {promptsData?.items.map((prompt) => (
+                {promptsData?.items.map((prompt: any) => (
                   <SelectItem key={prompt.name} value={prompt.name}>
                     {prompt.name}
                   </SelectItem>
@@ -171,8 +180,11 @@ export function DeployModal({
                 <SelectValue placeholder="Select a version" />
               </SelectTrigger>
               <SelectContent>
-                {versionsData?.items.map((version) => (
-                  <SelectItem key={version.version} value={version.version.toString()}>
+                {versionsData?.items?.map((version: any) => (
+                  <SelectItem
+                    key={version.version}
+                    value={version.version.toString()}
+                  >
                     <div className="flex items-center gap-2">
                       <span>Version {version.version}</span>
                       {version.active && (
@@ -192,7 +204,9 @@ export function DeployModal({
             <Label htmlFor="environment">Environment</Label>
             <Select
               value={selectedEnvironment}
-              onValueChange={(value) => setSelectedEnvironment(value as Environment)}
+              onValueChange={(value) =>
+                setSelectedEnvironment(value as Environment)
+              }
               disabled={isDeploying}
             >
               <SelectTrigger id="environment">
@@ -223,7 +237,8 @@ export function DeployModal({
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                You are deploying to production. Make sure this version has been tested.
+                You are deploying to production. Make sure this version has been
+                tested.
               </AlertDescription>
             </Alert>
           )}

@@ -6,7 +6,7 @@ import {
   useGetMyPromptsQuery,
   useUpdateVisibilityMutation,
   useDeletePromptMutation,
-} from "@/features/prompts/promptsApi";
+} from "@/hooks/usePrompts";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,10 +42,12 @@ const SKELETON_ITEMS = Array.from({ length: 4 }, (_, index) => index);
 export default function MyPromptsPage() {
   const { canEdit, canDelete } = useRole();
   const [search, setSearch] = useState("");
-  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "private">(
-    "all",
-  );
-  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<
+    "all" | "public" | "private"
+  >("all");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [sortBy, setSortBy] = useState<"created_at" | "name">("created_at");
   const [offset, setOffset] = useState(0);
 
@@ -68,10 +70,11 @@ export default function MyPromptsPage() {
     };
   }, [activeFilter, offset, search, sortBy, visibilityFilter]);
 
-  const { data, isLoading, isFetching, error } = useGetMyPromptsQuery(queryParams);
-  const [updateVisibility, { isLoading: isUpdatingVisibility }] =
+  const { data, isLoading, isFetching, error } =
+    useGetMyPromptsQuery(queryParams);
+  const { mutateAsync: updateVisibility, isPending: isUpdatingVisibility } =
     useUpdateVisibilityMutation();
-  const [deletePrompt, { isLoading: isDeleting }] = useDeletePromptMutation();
+  const { mutateAsync: deletePrompt, isPending: isDeleting } = useDeletePromptMutation();
 
   const prompts = data?.items ?? [];
   const totalCount = data?.count ?? 0;
@@ -86,22 +89,22 @@ export default function MyPromptsPage() {
       await updateVisibility({
         name: prompt.name,
         data: { is_public: !prompt.is_public },
-      }).unwrap();
+      });
       toast.success(
         `Prompt "${prompt.name}" is now ${prompt.is_public ? "private" : "public"}.`,
       );
     } catch (err: any) {
-      toast.error(err?.data?.detail || "Failed to update visibility");
+      toast.error(err?.message || "Failed to update visibility");
     }
   };
 
   const handleDelete = async (prompt: Prompt) => {
     if (!canDelete) return;
     try {
-      await deletePrompt(prompt.name).unwrap();
+      await deletePrompt(prompt.name);
       toast.success(`Prompt "${prompt.name}" deleted`);
     } catch (err: any) {
-      toast.error(err?.data?.detail || "Failed to delete prompt");
+      toast.error(err?.message || "Failed to delete prompt");
     }
   };
 
@@ -148,7 +151,8 @@ export default function MyPromptsPage() {
           </div>
           <Alert className="border-primary/40 bg-primary/5">
             <AlertDescription className="text-xs">
-              Toggle any prompt public to surface it in the shared hub instantly.
+              Toggle any prompt public to surface it in the shared hub
+              instantly.
             </AlertDescription>
           </Alert>
         </div>
@@ -217,7 +221,10 @@ export default function MyPromptsPage() {
       {(isLoading || isFetching) && (
         <div className="grid gap-4 md:grid-cols-2">
           {SKELETON_ITEMS.map((item) => (
-            <Skeleton key={`my-prompts-skeleton-${item}`} className="h-44 w-full bg-secondary/20" />
+            <Skeleton
+              key={`my-prompts-skeleton-${item}`}
+              className="h-44 w-full bg-secondary/20"
+            />
           ))}
         </div>
       )}
@@ -243,8 +250,11 @@ export default function MyPromptsPage() {
       ) : (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {prompts.map((prompt) => (
-              <Card key={prompt.id} className="border-border/50 bg-card/50 backdrop-blur-sm">
+            {prompts.map((prompt: any) => (
+              <Card
+                key={prompt.id}
+                className="border-border/50 bg-card/50 backdrop-blur-sm"
+              >
                 <CardHeader className="space-y-2">
                   <CardTitle className="text-lg text-foreground flex items-center gap-2">
                     {prompt.name}
@@ -269,8 +279,7 @@ export default function MyPromptsPage() {
                   </CardTitle>
                   <CardDescription className="flex flex-wrap items-center gap-3 text-xs">
                     <span className="flex items-center gap-1 text-muted-foreground">
-                      <GitBranch className="h-3.5 w-3.5" />
-                      v{prompt.version}
+                      <GitBranch className="h-3.5 w-3.5" />v{prompt.version}
                     </span>
                     <span className="text-muted-foreground">
                       Updated{" "}
@@ -295,14 +304,26 @@ export default function MyPromptsPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-1" asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      asChild
+                    >
                       <Link href={`/prompts/${prompt.name}?edit=true`}>
                         <Edit className="h-3.5 w-3.5" />
                         Edit
                       </Link>
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1" asChild>
-                      <Link href={`/deployments?prompt=${encodeURIComponent(prompt.name)}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      asChild
+                    >
+                      <Link
+                        href={`/deployments?prompt=${encodeURIComponent(prompt.name)}`}
+                      >
                         <Rocket className="h-3.5 w-3.5" />
                         Deploy
                       </Link>

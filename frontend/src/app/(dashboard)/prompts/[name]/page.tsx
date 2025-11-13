@@ -1,10 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import Link from "next/link";
-import { useGetPromptQuery, useGetVersionsQuery, useRollbackMutation } from "@/features/prompts/promptsApi";
-import { useGetDeploymentHistoryQuery } from "@/features/deployments/deploymentsApi";
+import {
+  useGetPromptQuery,
+  useGetVersionsQuery,
+  useRollbackMutation,
+} from "@/hooks/usePrompts";
+import { useGetDeploymentsHistoryQuery } from "@/hooks/useDeployments";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
@@ -63,20 +72,20 @@ export default function PromptDetailPage() {
     isLoading: versionsLoading,
     isError: versionsError,
   } = useGetVersionsQuery(promptName);
-  const [rollback, { isLoading: isRollingBack }] = useRollbackMutation();
+  const { mutateAsync: rollback, isPending: isRollingBack } = useRollbackMutation();
   const envHistoryLimit = 30;
-  const devHistory = useGetDeploymentHistoryQuery(
-    { environment: "dev", prompt: promptName, limit: envHistoryLimit },
-    { skip: !promptName },
-  );
-  const stagingHistory = useGetDeploymentHistoryQuery(
-    { environment: "staging", prompt: promptName, limit: envHistoryLimit },
-    { skip: !promptName },
-  );
-  const productionHistory = useGetDeploymentHistoryQuery(
-    { environment: "production", prompt: promptName, limit: envHistoryLimit },
-    { skip: !promptName },
-  );
+  const devHistory = useGetDeploymentsHistoryQuery("dev", {
+    promptName,
+    limit: envHistoryLimit,
+  });
+  const stagingHistory = useGetDeploymentsHistoryQuery("staging", {
+    promptName,
+    limit: envHistoryLimit,
+  });
+  const productionHistory = useGetDeploymentsHistoryQuery("production", {
+    promptName,
+    limit: envHistoryLimit,
+  });
 
   useEffect(() => {
     const editQuery = searchParams.get("edit") === "true";
@@ -87,16 +96,22 @@ export default function PromptDetailPage() {
   const environmentHistory = [
     { env: "dev" as Environment, label: "Development", query: devHistory },
     { env: "staging" as Environment, label: "Staging", query: stagingHistory },
-    { env: "production" as Environment, label: "Production", query: productionHistory },
+    {
+      env: "production" as Environment,
+      label: "Production",
+      query: productionHistory,
+    },
   ];
 
   const handleRollback = async (version: number) => {
     try {
-      const result = await rollback({ name: promptName, version }).unwrap();
-      toast.success(`Rolled back to version ${version}. New version ${result.version} created.`);
-      // RTK Query will automatically refetch the data due to cache invalidation
+      const result = await rollback({ name: promptName, version });
+      toast.success(
+        `Rolled back to version ${version}. New version ${result.version} created.`,
+      );
     } catch (error: any) {
-      const errorMessage = error?.data?.detail || "Failed to rollback. Please try again.";
+      const errorMessage =
+        error?.message || "Failed to rollback. Please try again.";
       toast.error(errorMessage);
     }
   };
@@ -136,10 +151,9 @@ export default function PromptDetailPage() {
       params.delete("edit");
     }
     const newQuery = params.toString();
-    router.replace(
-      newQuery ? `${pathname}?${newQuery}` : pathname,
-      { scroll: false },
-    );
+    router.replace(newQuery ? `${pathname}?${newQuery}` : pathname, {
+      scroll: false,
+    });
   };
 
   const handleOpenEdit = () => {
@@ -159,14 +173,20 @@ export default function PromptDetailPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Link href="/prompts">
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-muted-foreground hover:text-foreground"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-foreground">{prompt.name}</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              {prompt.name}
+            </h1>
             <Badge
               variant="secondary"
               className="bg-secondary/50 text-muted-foreground"
@@ -239,7 +259,7 @@ export default function PromptDetailPage() {
             </DialogDescription>
           </DialogHeader>
           <PromptEditor
-            prompt={prompt}
+            prompt={prompt as any}
             onCancel={handleCloseEdit}
             onSuccess={() => handleCloseEdit()}
           />
@@ -247,7 +267,11 @@ export default function PromptDetailPage() {
       </Dialog>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="bg-secondary/50 border border-border/50">
           <TabsTrigger value="overview" className="gap-2">
             <Code className="h-4 w-4" />
@@ -300,9 +324,9 @@ export default function PromptDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {prompt.variables.length > 0 ? (
+                {prompt.variables && Array.isArray(prompt.variables) && prompt.variables.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {prompt.variables.map((variable) => (
+                    {(prompt.variables as string[]).map((variable: string) => (
                       <Badge
                         key={variable}
                         variant="secondary"
@@ -328,7 +352,7 @@ export default function PromptDetailPage() {
             </h3>
             <PromptPreview
               template={prompt.template}
-              variables={prompt.variables}
+              variables={(prompt.variables as string[]) || []}
             />
           </div>
         </TabsContent>
@@ -355,7 +379,7 @@ export default function PromptDetailPage() {
                 </div>
               ) : versions.length > 0 ? (
                 <div className="space-y-3">
-                  {versions.map((version) => (
+                  {versions.map((version: any) => (
                     <div
                       key={version.id}
                       className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4 transition-colors hover:bg-background/80"
@@ -366,8 +390,8 @@ export default function PromptDetailPage() {
                             variant="secondary"
                             className="bg-secondary/50 text-muted-foreground"
                           >
-                            <GitBranch className="mr-1 h-3 w-3" />
-                            v{version.version}
+                            <GitBranch className="mr-1 h-3 w-3" />v
+                            {version.version}
                           </Badge>
                           {version.active && (
                             <Badge
@@ -453,11 +477,15 @@ export default function PromptDetailPage() {
                   const isLoadingEnv = query.isLoading;
                   const isErrorEnv = query.isError;
                   const deploymentsForPrompt =
-                    query.data?.items.filter((item) => item.prompt.name === prompt.name) ?? [];
+                    query.data?.items.filter(
+                      (item: any) => item.prompt.name === prompt.name,
+                    ) ?? [];
                   const latestDeployment = deploymentsForPrompt[0];
                   const deployedByLabel =
                     latestDeployment?.user?.email ??
-                    (latestDeployment ? `User #${latestDeployment.deployed_by}` : null);
+                    (latestDeployment
+                      ? `User #${latestDeployment.deployed_by}`
+                      : null);
 
                   return (
                     <Card
@@ -493,7 +521,8 @@ export default function PromptDetailPage() {
                           </div>
                         ) : isErrorEnv ? (
                           <p className="text-sm text-destructive">
-                            Failed to load deployments for {label.toLowerCase()}.
+                            Failed to load deployments for {label.toLowerCase()}
+                            .
                           </p>
                         ) : latestDeployment ? (
                           <div className="space-y-2">
@@ -502,9 +531,12 @@ export default function PromptDetailPage() {
                                 Last deployment
                               </span>
                               <p className="font-medium text-foreground">
-                                {formatDistanceToNow(new Date(latestDeployment.deployed_at), {
-                                  addSuffix: true,
-                                })}
+                                {formatDistanceToNow(
+                                  new Date(latestDeployment.deployed_at),
+                                  {
+                                    addSuffix: true,
+                                  },
+                                )}
                               </p>
                             </div>
                             {deployedByLabel && (
@@ -515,18 +547,26 @@ export default function PromptDetailPage() {
                             )}
                             <div className="text-xs flex items-center gap-2 text-muted-foreground">
                               <GitBranch className="h-3 w-3" />
-                              <span>Prompt version v{latestDeployment.prompt.version}</span>
+                              <span>
+                                Prompt version v
+                                {latestDeployment.prompt.version}
+                              </span>
                             </div>
                             {deploymentsForPrompt.length > 1 && (
                               <div className="text-xs text-muted-foreground">
-                                {deploymentsForPrompt.length - 1} more deployment
-                                {deploymentsForPrompt.length - 1 === 1 ? "" : "s"} recorded
+                                {deploymentsForPrompt.length - 1} more
+                                deployment
+                                {deploymentsForPrompt.length - 1 === 1
+                                  ? ""
+                                  : "s"}{" "}
+                                recorded
                               </div>
                             )}
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground">
-                            This prompt has not been deployed to {label.toLowerCase()} yet.
+                            This prompt has not been deployed to{" "}
+                            {label.toLowerCase()} yet.
                           </p>
                         )}
                       </CardContent>
@@ -537,11 +577,14 @@ export default function PromptDetailPage() {
 
               <div className="mt-6 flex items-center justify-between rounded-md border border-border/50 bg-background/40 px-4 py-3 text-sm text-muted-foreground">
                 <span>
-                  Manage deployments and promotion workflows or spin up a new deployment for this
-                  prompt from the main deployments dashboard.
+                  Manage deployments and promotion workflows or spin up a new
+                  deployment for this prompt from the main deployments
+                  dashboard.
                 </span>
                 <Button asChild variant="outline">
-                  <Link href={`/deployments?prompt=${encodeURIComponent(prompt.name)}`}>
+                  <Link
+                    href={`/deployments?prompt=${encodeURIComponent(prompt.name)}`}
+                  >
                     Open Deployments
                   </Link>
                 </Button>

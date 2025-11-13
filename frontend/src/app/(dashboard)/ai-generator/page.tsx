@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -30,8 +36,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useGeneratePromptMutation } from "@/features/ai/aiApi";
-import { useCreatePromptMutation } from "@/features/prompts/promptsApi";
+import { useGeneratePromptMutation } from "@/hooks/useAI";
+import { useCreatePromptMutation } from "@/hooks/usePrompts";
 import {
   Dialog,
   DialogContent,
@@ -43,10 +49,10 @@ import {
 } from "@/components/ui/dialog";
 import type {
   PromptGenerationRequestPayload,
-  PromptGenerationResponse,
   ToneOption,
   OutputFormatOption,
 } from "@/types/ai";
+import type { GeneratePromptResponse } from "@/lib/services/ai.service";
 
 type FormState = {
   goal: string;
@@ -84,16 +90,20 @@ const buildPromptName = (goal: string) => {
 
 export default function AIGeneratorPage() {
   const router = useRouter();
-  const [generatePrompt, { isLoading: isGenerating }] = useGeneratePromptMutation();
-  const [createPrompt, { isLoading: isPublishing }] = useCreatePromptMutation();
-  const [generationResult, setGenerationResult] = useState<PromptGenerationResponse | null>(null);
+  const { mutateAsync: generatePrompt, isPending: isGenerating } =
+    useGeneratePromptMutation();
+  const { mutateAsync: createPrompt, isPending: isPublishing } = useCreatePromptMutation();
+  const [generationResult, setGenerationResult] =
+    useState<GeneratePromptResponse | null>(null);
   const [copied, setCopied] = useState(false);
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [promptName, setPromptName] = useState("");
   const [publishError, setPublishError] = useState<string | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState<FormState>(() => createInitialFormState());
+  const [formData, setFormData] = useState<FormState>(() =>
+    createInitialFormState(),
+  );
 
   const handleInputChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -122,12 +132,12 @@ export default function AIGeneratorPage() {
     };
 
     try {
-      const result = await generatePrompt(payload).unwrap();
+      const result = await generatePrompt(payload);
       setGenerationResult(result);
       setCopied(false);
       toast.success("Prompt generated successfully!");
     } catch (error: any) {
-      toast.error(extractErrorMessage(error));
+      toast.error(error?.message || "Failed to generate prompt");
     }
   };
 
@@ -142,7 +152,9 @@ export default function AIGeneratorPage() {
 
   const handleDownload = () => {
     if (generationResult?.prompt_template) {
-      const blob = new Blob([generationResult.prompt_template], { type: "text/plain" });
+      const blob = new Blob([generationResult.prompt_template], {
+        type: "text/plain",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -170,7 +182,9 @@ export default function AIGeneratorPage() {
     setIsPublishDialogOpen(true);
   };
 
-  const handlePublishPrompt = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handlePublishPrompt = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (!generationResult) {
       return;
@@ -193,15 +207,18 @@ export default function AIGeneratorPage() {
         name,
         template: generationResult.prompt_template,
         variables: generationResult.variables,
-      }).unwrap();
+      });
 
       toast.success(`Prompt "${created.name}" published to your library`);
       setIsPublishDialogOpen(false);
       router.push(`/prompts/${created.name}`);
-    } catch (error) {
-      const message = extractErrorMessage(error);
+    } catch (error: any) {
+      const message = error?.message || "Failed to publish prompt";
       const normalizedMessage = message.toLowerCase();
-      if (normalizedMessage.includes("exists") || normalizedMessage.includes("duplicate")) {
+      if (
+        normalizedMessage.includes("exists") ||
+        normalizedMessage.includes("duplicate")
+      ) {
         setPublishError("A prompt with this name already exists");
       } else {
         setPublishError(message);
@@ -222,348 +239,404 @@ export default function AIGeneratorPage() {
         <div>
           <div className="flex items-center gap-3">
             <Sparkles className="h-5 w-5 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">AI Prompt Generator</h1>
-          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
-            Beta
-          </Badge>
+            <h1 className="text-3xl font-bold text-foreground">
+              AI Prompt Generator
+            </h1>
+            <Badge
+              variant="outline"
+              className="border-primary/30 bg-primary/10 text-primary"
+            >
+              Beta
+            </Badge>
+          </div>
+          <p className="mt-2 text-muted-foreground">
+            Generate professional, optimized prompts with AI assistance
+          </p>
         </div>
-        <p className="mt-2 text-muted-foreground">
-          Generate professional, optimized prompts with AI assistance
-        </p>
-      </div>
 
-      {/* Info Alert */}
-      <Alert className="border-border/60 bg-card/50">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-primary flex-shrink-0" />
-          <AlertDescription className="text-sm text-muted-foreground">
-            Describe your use case and let AI create a production-ready prompt template with
-            variables, best practices, and optimizations.
-          </AlertDescription>
-        </div>
-      </Alert>
+        {/* Info Alert */}
+        <Alert className="border-border/60 bg-card/50">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary flex-shrink-0" />
+            <AlertDescription className="text-sm text-muted-foreground">
+              Describe your use case and let AI create a production-ready prompt
+              template with variables, best practices, and optimizations.
+            </AlertDescription>
+          </div>
+        </Alert>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Input Form */}
-        <Card className="border-border/60 bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wand2 className="h-5 w-5 text-primary" />
-              Prompt Configuration
-            </CardTitle>
-            <CardDescription>
-              Fill in the details to generate your custom prompt
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Goal */}
-            <div className="space-y-2">
-              <Label htmlFor="goal" className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                Prompt Goal *
-              </Label>
-              <Textarea
-                id="goal"
-                placeholder="E.g., Generate product descriptions for e-commerce, Create email responses for customer support, Summarize technical documentation..."
-                value={formData.goal}
-                onChange={(e) => handleInputChange("goal", e.target.value)}
-                className="min-h-[80px] bg-background/50"
-              />
-            </div>
-
-            {/* Industry */}
-            <div className="space-y-2">
-              <Label htmlFor="industry">Industry / Domain</Label>
-              <Input
-                id="industry"
-                placeholder="E.g., Healthcare, E-commerce, Finance, Education..."
-                value={formData.industry}
-                onChange={(e) => handleInputChange("industry", e.target.value)}
-                className="bg-background/50"
-              />
-            </div>
-
-            {/* Target Audience */}
-            <div className="space-y-2">
-              <Label htmlFor="targetAudience" className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Target Audience
-              </Label>
-              <Input
-                id="targetAudience"
-                placeholder="E.g., Developers, Marketing teams, End customers..."
-                value={formData.targetAudience}
-                onChange={(e) => handleInputChange("targetAudience", e.target.value)}
-                className="bg-background/50"
-              />
-            </div>
-
-            {/* Tone */}
-            <div className="space-y-2">
-              <Label htmlFor="tone">Tone / Style</Label>
-              <Select value={formData.tone} onValueChange={(value) => handleInputChange("tone", value)}>
-                <SelectTrigger id="tone" className="bg-background/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="casual">Casual</SelectItem>
-                  <SelectItem value="friendly">Friendly</SelectItem>
-                  <SelectItem value="technical">Technical</SelectItem>
-                  <SelectItem value="creative">Creative</SelectItem>
-                  <SelectItem value="formal">Formal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Output Format */}
-            <div className="space-y-2">
-              <Label htmlFor="outputFormat" className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                Expected Output Format
-              </Label>
-              <Select
-                value={formData.outputFormat}
-                onValueChange={(value) => handleInputChange("outputFormat", value)}
-              >
-                <SelectTrigger id="outputFormat" className="bg-background/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">Plain Text</SelectItem>
-                  <SelectItem value="json">JSON</SelectItem>
-                  <SelectItem value="markdown">Markdown</SelectItem>
-                  <SelectItem value="html">HTML</SelectItem>
-                  <SelectItem value="code">Code</SelectItem>
-                  <SelectItem value="list">Bullet List</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Context */}
-            <div className="space-y-2">
-              <Label htmlFor="context">Additional Context</Label>
-              <Textarea
-                id="context"
-                placeholder="Any additional context, background information, or specific requirements..."
-                value={formData.context}
-                onChange={(e) => handleInputChange("context", e.target.value)}
-                className="min-h-[60px] bg-background/50"
-              />
-            </div>
-
-            {/* Constraints */}
-            <div className="space-y-2">
-              <Label htmlFor="constraints">Constraints / Limitations</Label>
-              <Textarea
-                id="constraints"
-                placeholder="E.g., Max 200 words, Must avoid jargon, Should include specific keywords..."
-                value={formData.constraints}
-                onChange={(e) => handleInputChange("constraints", e.target.value)}
-                className="min-h-[60px] bg-background/50"
-              />
-            </div>
-
-            {/* Examples */}
-            <div className="space-y-2">
-              <Label htmlFor="examples">Example Inputs/Outputs (Optional)</Label>
-              <Textarea
-                id="examples"
-                placeholder="Provide examples of inputs and expected outputs to guide the AI..."
-                value={formData.examples}
-                onChange={(e) => handleInputChange("examples", e.target.value)}
-                className="min-h-[80px] bg-background/50"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || !formData.goal.trim()}
-                className="flex-1"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate Prompt
-                  </>
-                )}
-              </Button>
-              <Button variant="outline" onClick={handleReset}>
-                Reset
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Output Preview */}
-        <Card className="border-border/60 bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Generated Prompt
-            </CardTitle>
-            <CardDescription>
-              Your AI-optimized prompt template ready to use
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isGenerating ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/60 rounded-lg bg-background/30">
-                <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  Generating a fresh prompt tailored to your inputs...
-                </p>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Input Form */}
+          <Card className="border-border/60 bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5 text-primary" />
+                Prompt Configuration
+              </CardTitle>
+              <CardDescription>
+                Fill in the details to generate your custom prompt
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Goal */}
+              <div className="space-y-2">
+                <Label htmlFor="goal" className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                  Prompt Goal *
+                </Label>
+                <Textarea
+                  id="goal"
+                  placeholder="E.g., Generate product descriptions for e-commerce, Create email responses for customer support, Summarize technical documentation..."
+                  value={formData.goal}
+                  onChange={(e) => handleInputChange("goal", e.target.value)}
+                  className="min-h-[80px] bg-background/50"
+                />
               </div>
-            ) : !generationResult ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/60 rounded-lg bg-background/30">
-                <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Fill in the form and click "Generate Prompt" to see your AI-optimized template
-                </p>
+
+              {/* Industry */}
+              <div className="space-y-2">
+                <Label htmlFor="industry">Industry / Domain</Label>
+                <Input
+                  id="industry"
+                  placeholder="E.g., Healthcare, E-commerce, Finance, Education..."
+                  value={formData.industry}
+                  onChange={(e) =>
+                    handleInputChange("industry", e.target.value)
+                  }
+                  className="bg-background/50"
+                />
               </div>
-            ) : (
-              <>
-                {/* Generated Prompt Display */}
-                <div className="relative">
-                  <div className="scrollbar-slim rounded-lg border border-border/60 bg-background/50 p-4 max-h-[500px] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
-                      {promptText}
-                    </pre>
-                  </div>
 
-                  {/* Success Badge */}
-                  <div className="flex items-center gap-2 mt-3">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-muted-foreground">
-                      Prompt generated successfully
-                    </span>
-                  </div>
+              {/* Target Audience */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="targetAudience"
+                  className="flex items-center gap-2"
+                >
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  Target Audience
+                </Label>
+                <Input
+                  id="targetAudience"
+                  placeholder="E.g., Developers, Marketing teams, End customers..."
+                  value={formData.targetAudience}
+                  onChange={(e) =>
+                    handleInputChange("targetAudience", e.target.value)
+                  }
+                  className="bg-background/50"
+                />
+              </div>
+
+              {/* Tone */}
+              <div className="space-y-2">
+                <Label htmlFor="tone">Tone / Style</Label>
+                <Select
+                  value={formData.tone}
+                  onValueChange={(value) => handleInputChange("tone", value)}
+                >
+                  <SelectTrigger id="tone" className="bg-background/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="casual">Casual</SelectItem>
+                    <SelectItem value="friendly">Friendly</SelectItem>
+                    <SelectItem value="technical">Technical</SelectItem>
+                    <SelectItem value="creative">Creative</SelectItem>
+                    <SelectItem value="formal">Formal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Output Format */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="outputFormat"
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Expected Output Format
+                </Label>
+                <Select
+                  value={formData.outputFormat}
+                  onValueChange={(value) =>
+                    handleInputChange("outputFormat", value)
+                  }
+                >
+                  <SelectTrigger id="outputFormat" className="bg-background/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Plain Text</SelectItem>
+                    <SelectItem value="json">JSON</SelectItem>
+                    <SelectItem value="markdown">Markdown</SelectItem>
+                    <SelectItem value="html">HTML</SelectItem>
+                    <SelectItem value="code">Code</SelectItem>
+                    <SelectItem value="list">Bullet List</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Context */}
+              <div className="space-y-2">
+                <Label htmlFor="context">Additional Context</Label>
+                <Textarea
+                  id="context"
+                  placeholder="Any additional context, background information, or specific requirements..."
+                  value={formData.context}
+                  onChange={(e) => handleInputChange("context", e.target.value)}
+                  className="min-h-[60px] bg-background/50"
+                />
+              </div>
+
+              {/* Constraints */}
+              <div className="space-y-2">
+                <Label htmlFor="constraints">Constraints / Limitations</Label>
+                <Textarea
+                  id="constraints"
+                  placeholder="E.g., Max 200 words, Must avoid jargon, Should include specific keywords..."
+                  value={formData.constraints}
+                  onChange={(e) =>
+                    handleInputChange("constraints", e.target.value)
+                  }
+                  className="min-h-[60px] bg-background/50"
+                />
+              </div>
+
+              {/* Examples */}
+              <div className="space-y-2">
+                <Label htmlFor="examples">
+                  Example Inputs/Outputs (Optional)
+                </Label>
+                <Textarea
+                  id="examples"
+                  placeholder="Provide examples of inputs and expected outputs to guide the AI..."
+                  value={formData.examples}
+                  onChange={(e) =>
+                    handleInputChange("examples", e.target.value)
+                  }
+                  className="min-h-[80px] bg-background/50"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !formData.goal.trim()}
+                  className="flex-1"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate Prompt
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" onClick={handleReset}>
+                  Reset
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Output Preview */}
+          <Card className="border-border/60 bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Generated Prompt
+              </CardTitle>
+              <CardDescription>
+                Your AI-optimized prompt template ready to use
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isGenerating ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/60 rounded-lg bg-background/30">
+                  <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    Generating a fresh prompt tailored to your inputs...
+                  </p>
                 </div>
-
-                {/* Metadata */}
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-background/30 border border-border/40">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Variables Detected</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {variables.length}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Character Count</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {metadata?.char_count ?? promptText.length}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Word Count</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {metadata?.word_count ??
-                        (promptText ? promptText.trim().split(/\s+/).length : 0)}
-                    </p>
-                  </div>
+              ) : !generationResult ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border/60 rounded-lg bg-background/30">
+                  <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Fill in the form and click "Generate Prompt" to see your
+                    AI-optimized template
+                  </p>
                 </div>
-
-                {metadata && (
-                  <div className="grid gap-2 rounded-lg border border-border/40 bg-background/30 p-3 text-xs">
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span>Lines</span>
-                      <span className="text-foreground font-medium">{metadata.line_count}</span>
+              ) : (
+                <>
+                  {/* Generated Prompt Display */}
+                  <div className="relative">
+                    <div className="scrollbar-slim rounded-lg border border-border/60 bg-background/50 p-4 max-h-[500px] overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
+                        {promptText}
+                      </pre>
                     </div>
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span>Complexity</span>
-                      <span className="capitalize text-foreground font-medium">
-                        {metadata.complexity}
+
+                    {/* Success Badge */}
+                    <div className="flex items-center gap-2 mt-3">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-muted-foreground">
+                        Prompt generated successfully
                       </span>
                     </div>
                   </div>
-                )}
 
-                {variables.length > 0 && (
-                  <div className="rounded-lg border border-border/40 bg-background/30 p-3">
-                    <p className="text-xs text-muted-foreground mb-2">Variables</p>
-                    <div className="flex flex-wrap gap-2">
-                      {variables.map((variable) => (
-                        <Badge key={variable} variant="outline" className="text-xs">
-                          {`{{${variable}}}`}
-                        </Badge>
-                      ))}
+                  {/* Metadata */}
+                  <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-background/30 border border-border/40">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Variables Detected
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        {variables.length}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Character Count
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        {metadata?.char_count ?? promptText.length}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Word Count
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        {metadata?.word_count ??
+                          (promptText
+                            ? promptText.trim().split(/\s+/).length
+                            : 0)}
+                      </p>
                     </div>
                   </div>
-                )}
 
-                {suggestions.length > 0 && (
-                  <div className="rounded-lg border border-border/40 bg-background/30 p-3 space-y-2">
-                    <p className="text-xs text-muted-foreground">Improvement Suggestions</p>
-                    <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
-                      {suggestions.map((item, index) => (
-                        <li key={`${item}-${index}`} className="leading-relaxed">
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+                  {metadata && (
+                    <div className="grid gap-2 rounded-lg border border-border/40 bg-background/30 p-3 text-xs">
+                      <div className="flex items-center justify-between text-muted-foreground">
+                        <span>Variables</span>
+                        <span className="text-foreground font-medium">
+                          {metadata.variable_count}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-muted-foreground">
+                        <span>Complexity</span>
+                        <span className="capitalize text-foreground font-medium">
+                          {metadata.complexity}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {variables.length > 0 && (
+                    <div className="rounded-lg border border-border/40 bg-background/30 p-3">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Variables
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {variables.map((variable: string) => (
+                          <Badge
+                            key={variable}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {`{{${variable}}}`}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {suggestions.length > 0 && (
+                    <div className="rounded-lg border border-border/40 bg-background/30 p-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Improvement Suggestions
+                      </p>
+                      <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                        {suggestions.map((item, index) => (
+                          <li
+                            key={`${item}-${index}`}
+                            className="leading-relaxed"
+                          >
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      onClick={handleOpenPublishDialog}
+                      disabled={isPublishing}
+                      className="sm:flex-1"
+                    >
+                      {isPublishing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Publishing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Publish to Library
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleCopy}
+                      variant="outline"
+                      className="sm:flex-1"
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copy to Clipboard
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleDownload}
+                      variant="outline"
+                      className="sm:flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download .txt
+                    </Button>
                   </div>
-                )}
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    onClick={handleOpenPublishDialog}
-                    disabled={isPublishing}
-                    className="sm:flex-1"
-                  >
-                    {isPublishing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Publishing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Publish to Library
-                      </>
-                    )}
-                  </Button>
-                  <Button onClick={handleCopy} variant="outline" className="sm:flex-1">
-                    {copied ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy to Clipboard
-                      </>
-                    )}
-                  </Button>
-                  <Button onClick={handleDownload} variant="outline" className="sm:flex-1">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download .txt
-                  </Button>
-                </div>
-
-                {/* Info Alert */}
-                <Alert className="border-border/60 bg-card/50">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                    <AlertDescription className="text-xs text-muted-foreground">
-                      You can now copy this prompt or save it to your Prompts library for version
-                      control and deployment.
-                    </AlertDescription>
-                  </div>
-                </Alert>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  {/* Info Alert */}
+                  <Alert className="border-border/60 bg-card/50">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                      <AlertDescription className="text-xs text-muted-foreground">
+                        You can now copy this prompt or save it to your Prompts
+                        library for version control and deployment.
+                      </AlertDescription>
+                    </div>
+                  </Alert>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <Dialog open={isPublishDialogOpen} onOpenChange={setIsPublishDialogOpen}>
@@ -571,7 +644,8 @@ export default function AIGeneratorPage() {
           <DialogHeader>
             <DialogTitle>Publish Prompt to Library</DialogTitle>
             <DialogDescription>
-              Save the generated template so you can iterate on versions and deploy it later.
+              Save the generated template so you can iterate on versions and
+              deploy it later.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePublishPrompt} className="space-y-4">

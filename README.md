@@ -48,7 +48,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/prompt-version-hub.git
+git clone https://github.com/lioarce01/prompt-version-hub.git
 cd prompt-version-hub
 ```
 

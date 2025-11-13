@@ -82,10 +82,7 @@ const typeLabels: Record<DiffEntryType, string> = {
 
 export function DiffViewer({ original, updated }: DiffViewerProps) {
   const diff = useMemo(() => buildDiff(original, updated), [original, updated]);
-  const hasChanges = useMemo(
-    () => original !== updated,
-    [original, updated],
-  );
+  const hasChanges = useMemo(() => original !== updated, [original, updated]);
 
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">

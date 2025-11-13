@@ -54,9 +54,7 @@ export default function NotFound() {
 
         {/* Quick Links */}
         <div className="space-y-2 border-t border-border/60 pt-4">
-          <p className="text-xs text-muted-foreground">
-            Quick links:
-          </p>
+          <p className="text-xs text-muted-foreground">Quick links:</p>
           <div className="flex flex-wrap justify-center gap-2">
             <Link href="/prompts">
               <Button variant="ghost" size="sm" className="text-xs">

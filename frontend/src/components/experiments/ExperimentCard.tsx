@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Globe, Lock, MoreVertical, Trash2, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ABPolicyListItem } from "@/types/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useDeleteExperimentMutation } from "@/features/experiments/experimentsApi";
+import { useDeleteExperimentMutation } from "@/hooks/useExperiments";
 import { cn } from "@/lib/utils";
+import { abService } from "@/lib/services/ab.service";
+import { useUserId } from "@/hooks/useAuth";
 
 interface ExperimentCardProps {
   experiment: ABPolicyListItem;
@@ -34,23 +37,45 @@ interface ExperimentCardProps {
 
 export function ExperimentCard({ experiment }: ExperimentCardProps) {
   const router = useRouter();
+  const userId = useUserId();
+  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteExperiment, { isLoading: isDeleting }] =
+  const { mutateAsync: deleteExperiment, isPending: isDeleting } =
     useDeleteExperimentMutation();
+
+  // Prefetch experiment details and stats on hover
+  const handlePrefetchExperiment = () => {
+    if (!userId) return;
+
+    const promptName = experiment.prompt_name;
+
+    // Prefetch experiment detail
+    queryClient.prefetchQuery({
+      queryKey: ["experiments", "detail", promptName],
+      queryFn: async () => {
+        return abService.getPolicyByName(promptName, userId);
+      },
+    });
+
+    // Prefetch experiment stats
+    queryClient.prefetchQuery({
+      queryKey: ["experiments", "results", promptName],
+      queryFn: async () => {
+        return abService.getExperimentStats(promptName, userId);
+      },
+    });
+  };
 
   const totalWeight = Object.values(experiment.weights).reduce(
     (sum, weight) => sum + weight,
-    0
+    0,
   );
 
   const variantCount = Object.keys(experiment.weights).length;
 
   const handleDelete = async () => {
     try {
-      await deleteExperiment({
-        id: experiment.id,
-        promptName: experiment.prompt_name
-      }).unwrap();
+      await deleteExperiment(experiment.id);
       toast.success("Experiment deleted successfully");
       setShowDeleteDialog(false);
     } catch (error) {
@@ -63,8 +88,9 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
       <Card
         className={cn(
           "group relative overflow-hidden transition-all hover:shadow-md",
-          "border-border bg-card/50 hover:bg-accent/5"
+          "border-border bg-card/50 hover:bg-accent/5",
         )}
+        onMouseEnter={handlePrefetchExperiment}
       >
         <div className="p-6">
           {/* Header */}
@@ -112,7 +138,7 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
                 "gap-1.5",
                 experiment.is_public
                   ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                  : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                  : "bg-gray-500/10 text-gray-400 border-gray-500/20",
               )}
             >
               {experiment.is_public ? (
@@ -165,7 +191,9 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
             className="w-full mt-4 gap-2"
             size="sm"
             onClick={() => {
-              router.push(`/experiments/${encodeURIComponent(experiment.prompt_name)}`);
+              router.push(
+                `/experiments/${encodeURIComponent(experiment.prompt_name)}`,
+              );
             }}
           >
             <Eye className="h-4 w-4" />
