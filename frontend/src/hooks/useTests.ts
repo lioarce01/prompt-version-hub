@@ -6,12 +6,18 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  testsService,
+  get_test_suite,
+  create_test_case,
+  update_test_case,
+  delete_test_case,
+  generate_test_cases,
+  run_tests,
   type CreateTestCaseParams,
   type UpdateTestCaseParams,
   type RunTestsParams,
-} from "@/lib/services/tests.service";
-import { useUserId } from "./useAuth";
+} from "@/lib/api/tests";
+import { tests_keys } from "@/lib/api/tests-keys";
+import { useUserId } from "@/hooks/auth/useAuth";
 import { useGenerateTestsMutation as useGenerateTestsMutationFromAI } from "./useAI";
 
 /**
@@ -23,12 +29,13 @@ export function useGetTestSuitesQuery(promptName: string | null) {
   const userId = useUserId();
 
   return useQuery({
-    queryKey: ["tests", "suite", promptName],
+    queryKey: tests_keys.suite(promptName),
     queryFn: async () => {
       if (!promptName || !userId) return null;
-      return testsService.getTestSuite(promptName, userId);
+      return get_test_suite(promptName, userId);
     },
     enabled: !!promptName && !!userId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
@@ -41,14 +48,15 @@ export function useGetTestResultsQuery(promptName: string | null) {
   const userId = useUserId();
 
   return useQuery({
-    queryKey: ["tests", "results", promptName],
+    queryKey: tests_keys.results(promptName),
     queryFn: async () => {
       if (!promptName || !userId) return null;
-      const suiteData = await testsService.getTestSuite(promptName, userId);
+      const suite_data = await get_test_suite(promptName, userId);
       // Return only the test runs
-      return suiteData.runs;
+      return suite_data.runs;
     },
     enabled: !!promptName && !!userId,
+    staleTime: 1 * 60 * 1000, // 1 minute (test results update frequently)
   });
 }
 
@@ -65,11 +73,7 @@ export function useCreateTestCaseMutation() {
       testCase: CreateTestCaseParams;
     }) => {
       if (!userId) throw new Error("Not authenticated");
-      return testsService.createTestCase(
-        params.promptName,
-        userId,
-        params.testCase,
-      );
+      return create_test_case(params.promptName, userId, params.testCase);
     },
     // Optimistic update: add test case to cache immediately
     onMutate: async (variables) => {
@@ -77,52 +81,47 @@ export function useCreateTestCaseMutation() {
 
       // Cancel outgoing refetches to avoid race conditions
       await queryClient.cancelQueries({
-        queryKey: ["tests", "suite", promptName],
+        queryKey: tests_keys.suite(promptName),
       });
 
       // Snapshot previous value for rollback
-      const previousSuite = queryClient.getQueryData([
-        "tests",
-        "suite",
-        promptName,
-      ]);
-
-      // Optimistically add test case to suite
-      queryClient.setQueryData(
-        ["tests", "suite", promptName],
-        (old: any) => {
-          if (!old) return old;
-
-          // Create optimistic test case with temporary ID
-          const optimisticCase = {
-            id: -Date.now(), // Temporary negative ID
-            ...testCase,
-            created_at: new Date().toISOString(),
-            auto_generated: false,
-          };
-
-          return {
-            ...old,
-            cases: [...(old.cases || []), optimisticCase],
-          };
-        }
+      const previous_suite = queryClient.getQueryData(
+        tests_keys.suite(promptName)
       );
 
-      return { previousSuite };
+      // Optimistically add test case to suite
+      queryClient.setQueryData(tests_keys.suite(promptName), (old: any) => {
+        if (!old) return old;
+
+        // Create optimistic test case with temporary ID
+        const optimistic_case = {
+          id: -Date.now(), // Temporary negative ID
+          ...testCase,
+          created_at: new Date().toISOString(),
+          auto_generated: false,
+        };
+
+        return {
+          ...old,
+          cases: [...(old.cases || []), optimistic_case],
+        };
+      });
+
+      return { previous_suite };
     },
     onError: (_err, variables, context) => {
       // Rollback on error
-      if (context?.previousSuite) {
+      if (context?.previous_suite) {
         queryClient.setQueryData(
-          ["tests", "suite", variables.promptName],
-          context.previousSuite
+          tests_keys.suite(variables.promptName),
+          context.previous_suite
         );
       }
     },
     onSuccess: (_, variables) => {
       // Invalidate test suite to refetch with real data
       queryClient.invalidateQueries({
-        queryKey: ["tests", "suite", variables.promptName],
+        queryKey: tests_keys.suite(variables.promptName),
       });
     },
   });
@@ -141,19 +140,15 @@ export function useRunTestsMutation() {
       testParams: RunTestsParams;
     }) => {
       if (!userId) throw new Error("Not authenticated");
-      return testsService.runTests(
-        params.promptName,
-        userId,
-        params.testParams,
-      );
+      return run_tests(params.promptName, userId, params.testParams);
     },
     onSuccess: (_, variables) => {
       // Invalidate test suite and results to show new execution
       queryClient.invalidateQueries({
-        queryKey: ["tests", "suite", variables.promptName],
+        queryKey: tests_keys.suite(variables.promptName),
       });
       queryClient.invalidateQueries({
-        queryKey: ["tests", "results", variables.promptName],
+        queryKey: tests_keys.results(variables.promptName),
       });
     },
   });
@@ -172,11 +167,11 @@ export function useUpdateTestCaseMutation() {
       updates: UpdateTestCaseParams;
     }) => {
       if (!userId) throw new Error("Not authenticated");
-      return testsService.updateTestCase(params.caseId, userId, params.updates);
+      return update_test_case(params.caseId, userId, params.updates);
     },
     onSuccess: () => {
       // Invalidate all test suites to refresh
-      queryClient.invalidateQueries({ queryKey: ["tests", "suite"] });
+      queryClient.invalidateQueries({ queryKey: tests_keys.suites() });
     },
   });
 }
@@ -191,11 +186,11 @@ export function useDeleteTestCaseMutation() {
   return useMutation({
     mutationFn: async (caseId: number) => {
       if (!userId) throw new Error("Not authenticated");
-      await testsService.deleteTestCase(caseId, userId);
+      await delete_test_case(caseId, userId);
     },
     onSuccess: () => {
       // Invalidate all test suites to refresh
-      queryClient.invalidateQueries({ queryKey: ["tests", "suite"] });
+      queryClient.invalidateQueries({ queryKey: tests_keys.suites() });
     },
   });
 }

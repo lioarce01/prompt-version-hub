@@ -82,7 +82,7 @@ export function DeployModal({
       !selectedVersion
     ) {
       // Select the active version by default
-      const activeVersion = versionsData.items.find((v: any) => v.active);
+      const activeVersion = (versionsData.items as any[]).find((v: any) => v.active);
       if (activeVersion) {
         setSelectedVersion(activeVersion.version.toString());
       }

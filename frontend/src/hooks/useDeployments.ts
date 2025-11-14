@@ -7,10 +7,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  deploymentsService,
+  create_deployment,
+  get_current_deployment,
+  get_history,
   type CreateDeploymentParams,
-} from "@/lib/services/deployments.service";
-import { useUserId } from "./useAuth";
+} from "@/lib/api/deployments";
+import { deployments_keys } from "@/lib/api/deployments-keys";
+import { useUserId } from "@/hooks/auth/useAuth";
 
 interface GetHistoryParams {
   limit?: number;
@@ -31,21 +34,15 @@ export function useGetDeploymentsHistoryQuery(
   const userId = useUserId();
 
   return useQuery({
-    queryKey: [
-      "deployments",
+    queryKey: deployments_keys.history(
       environment,
-      "history",
       params.limit,
       params.offset,
-      params.promptName,
-    ],
+      params.promptName
+    ),
     queryFn: async () => {
       if (!userId || !environment) return null;
-      const items = await deploymentsService.getHistory(
-        environment,
-        userId,
-        params,
-      );
+      const items = await get_history(environment, userId, params);
       return {
         items,
         count: items.length,
@@ -56,6 +53,7 @@ export function useGetDeploymentsHistoryQuery(
       };
     },
     enabled: !!userId && !!environment,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
@@ -72,16 +70,13 @@ export function useGetCurrentDeploymentQuery(
   const userId = useUserId();
 
   return useQuery({
-    queryKey: ["deployments", environment, "current", promptName],
+    queryKey: deployments_keys.current(environment, promptName),
     queryFn: async () => {
       if (!userId || !environment) return null;
-      return deploymentsService.getCurrentDeployment(
-        environment,
-        userId,
-        promptName,
-      );
+      return get_current_deployment(environment, userId, promptName);
     },
     enabled: !!userId && !!environment,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
@@ -97,27 +92,25 @@ export function useGetAllDeploymentHistoryQuery(params: GetHistoryParams = {}) {
   const userId = useUserId();
 
   return useQuery({
-    queryKey: [
-      "deployments",
-      "all-history",
+    queryKey: deployments_keys.all_history(
       params.limit,
       params.offset,
-      params.promptName,
-    ],
+      params.promptName
+    ),
     queryFn: async () => {
       if (!userId) return null;
 
       // Fetch from all three environments in parallel
-      const [devData, stagingData, productionData] = await Promise.all([
-        deploymentsService.getHistory("dev", userId, params),
-        deploymentsService.getHistory("staging", userId, params),
-        deploymentsService.getHistory("production", userId, params),
+      const [dev_data, staging_data, production_data] = await Promise.all([
+        get_history("dev", userId, params),
+        get_history("staging", userId, params),
+        get_history("production", userId, params),
       ]);
 
       // Combine and sort by deployed_at
-      const combined = [...devData, ...stagingData, ...productionData].sort(
+      const combined = [...dev_data, ...staging_data, ...production_data].sort(
         (a, b) =>
-          new Date(b.deployed_at).getTime() - new Date(a.deployed_at).getTime(),
+          new Date(b.deployed_at).getTime() - new Date(a.deployed_at).getTime()
       );
 
       return {
@@ -130,6 +123,7 @@ export function useGetAllDeploymentHistoryQuery(params: GetHistoryParams = {}) {
       };
     },
     enabled: !!userId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
@@ -143,11 +137,11 @@ export function useCreateDeploymentMutation() {
   return useMutation({
     mutationFn: async (params: CreateDeploymentParams) => {
       if (!userId) throw new Error("Not authenticated");
-      return deploymentsService.createDeployment(userId, params);
+      return create_deployment(userId, params);
     },
     onSuccess: (data, variables) => {
       // Invalidate all deployment queries to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: ["deployments"] });
+      queryClient.invalidateQueries({ queryKey: deployments_keys.all });
     },
   });
 }

@@ -4,11 +4,11 @@
  * Handles dashboard KPIs and analytics
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export class KPIsService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**

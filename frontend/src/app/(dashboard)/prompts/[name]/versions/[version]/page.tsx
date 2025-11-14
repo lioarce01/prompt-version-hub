@@ -9,7 +9,7 @@ import {
   useRollbackMutation,
 } from "@/hooks/usePrompts";
 import { useRole } from "@/hooks/useRole";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

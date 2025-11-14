@@ -93,7 +93,7 @@ export default function DeploymentsPage() {
       limit: 100,
     });
 
-  const promptOptions = useMemo(() => promptData?.items ?? [], [promptData]);
+  const promptOptions = useMemo(() => (promptData?.items ?? []) as any[], [promptData]);
   const selectPromptValue = promptFilter || "all";
   const promptScopeLabel = useMemo(() => {
     if (!promptFilter) {

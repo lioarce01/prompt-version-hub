@@ -29,7 +29,7 @@ import {
 import { useDeleteExperimentMutation } from "@/hooks/useExperiments";
 import { cn } from "@/lib/utils";
 import { abService } from "@/lib/services/ab.service";
-import { useUserId } from "@/hooks/useAuth";
+import { useUserId } from "@/hooks/auth/useAuth";
 
 interface ExperimentCardProps {
   experiment: ABPolicyListItem;

@@ -4,7 +4,7 @@
  * Handles all deployment-related operations using Supabase
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import type { Database } from "../supabase/types";
 
 type Deployment = Database["public"]["Tables"]["deployments"]["Row"];
@@ -17,7 +17,7 @@ export interface CreateDeploymentParams {
 
 export class DeploymentsService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**

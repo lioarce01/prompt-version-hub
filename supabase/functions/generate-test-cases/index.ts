@@ -10,23 +10,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const GEMINI_API_KEY = Deno.env.get('GOOGLE_GENAI_API_KEY');
 const GEMINI_MODEL = Deno.env.get('GOOGLE_GENAI_MODEL') || 'gemini-2.0-flash-exp';
 
-serve(async (req) => {
-  try {
-    if (req.method === 'OPTIONS') {
-      return new Response('ok', {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-        },
-      });
-    }
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST',
+      },
+    });
+  }
+
+  try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -40,7 +46,7 @@ serve(async (req) => {
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -49,7 +55,7 @@ serve(async (req) => {
     if (!GEMINI_API_KEY) {
       return new Response(JSON.stringify({ error: 'AI service not configured' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -112,13 +118,13 @@ serve(async (req) => {
     );
 
     return new Response(JSON.stringify({ test_cases: testCases }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

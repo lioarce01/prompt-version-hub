@@ -25,7 +25,7 @@ import {
 import { VariantDistributionChart } from "@/components/experiments/VariantDistributionChart";
 import { EditExperimentModal } from "@/components/experiments/EditExperimentModal";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export default function ExperimentDetailPage() {
   const params = useParams();

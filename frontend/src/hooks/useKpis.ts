@@ -6,7 +6,15 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { kpisService } from "@/lib/services/kpis.service";
+import {
+  get_summary,
+  get_usage_trend,
+  get_version_velocity,
+  get_top_prompts,
+  get_experiments_analytics,
+} from "@/lib/api/kpis";
+import { kpis_keys } from "@/lib/api/kpis-keys";
+import { useUserId } from "@/hooks/auth/useAuth";
 
 /**
  * Fetch dashboard summary statistics
@@ -14,10 +22,13 @@ import { kpisService } from "@/lib/services/kpis.service";
  * @returns Summary data including totals and recent activity
  */
 export function useGetSummaryQuery() {
+  const userId = useUserId();
+
   return useQuery({
-    queryKey: ["kpis", "summary"],
+    queryKey: kpis_keys.summary(),
     queryFn: async () => {
-      const data = await kpisService.getSummary();
+      if (!userId) return null;
+      const data = await get_summary();
       // Transform to match expected format
       return {
         totals: {
@@ -29,6 +40,8 @@ export function useGetSummaryQuery() {
         recent_activity: data.recent_usage,
       };
     },
+    enabled: !!userId, // Only run when authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -42,12 +55,18 @@ export function useGetSummaryQuery() {
 export function useGetUsageTrendQuery(
   params: { period_days?: number; bucket?: "week" | "day" } = {},
 ) {
+  const userId = useUserId();
   const period_days = params.period_days ?? 42;
   const bucket = params.bucket ?? "week";
 
   return useQuery({
-    queryKey: ["kpis", "usage-trend", period_days, bucket],
-    queryFn: () => kpisService.getUsageTrend(period_days, bucket),
+    queryKey: kpis_keys.usage_trend(period_days, bucket),
+    queryFn: async () => {
+      if (!userId) return null;
+      return get_usage_trend(period_days, bucket);
+    },
+    enabled: !!userId, // Only run when authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -60,11 +79,17 @@ export function useGetUsageTrendQuery(
  * @param params.months - Number of months to analyze (default: 6)
  */
 export function useGetVersionVelocityQuery(params: { months?: number } = {}) {
+  const userId = useUserId();
   const months = params.months ?? 6;
 
   return useQuery({
-    queryKey: ["kpis", "version-velocity", months],
-    queryFn: () => kpisService.getVersionVelocity(months),
+    queryKey: kpis_keys.version_velocity(months),
+    queryFn: async () => {
+      if (!userId) return null;
+      return get_version_velocity(months);
+    },
+    enabled: !!userId, // Only run when authenticated
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
@@ -78,12 +103,18 @@ export function useGetVersionVelocityQuery(params: { months?: number } = {}) {
 export function useGetTopPromptsQuery(
   params: { limit?: number; period_days?: number } = {},
 ) {
+  const userId = useUserId();
   const limit = params.limit ?? 10;
   const period_days = params.period_days ?? 30;
 
   return useQuery({
-    queryKey: ["kpis", "top-prompts", limit, period_days],
-    queryFn: () => kpisService.getTopPrompts(limit, period_days),
+    queryKey: kpis_keys.top_prompts(limit, period_days),
+    queryFn: async () => {
+      if (!userId) return null;
+      return get_top_prompts(limit, period_days);
+    },
+    enabled: !!userId, // Only run when authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -93,8 +124,15 @@ export function useGetTopPromptsQuery(
  * Provides overview of A/B testing experiments
  */
 export function useGetExperimentsAnalyticsQuery() {
+  const userId = useUserId();
+
   return useQuery({
-    queryKey: ["kpis", "experiments-analytics"],
-    queryFn: () => kpisService.getExperiments(),
+    queryKey: kpis_keys.experiments_analytics(),
+    queryFn: async () => {
+      if (!userId) return null;
+      return get_experiments_analytics();
+    },
+    enabled: !!userId, // Only run when authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

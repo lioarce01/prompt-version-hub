@@ -24,9 +24,8 @@ export default function ExperimentsPage() {
         const matchesSearch = exp.prompt_name
           .toLowerCase()
           .includes(searchQuery.toLowerCase());
-        const matchesFilter = filterTab === "all" ? true : exp.is_owner;
-
-        return matchesSearch && matchesFilter;
+        // Filter is already applied by query (includePublic parameter)
+        return matchesSearch;
       })
     : [];
 

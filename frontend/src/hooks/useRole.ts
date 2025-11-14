@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "./useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import type { UserRole } from "@/types/api";
 
 export function useRole() {

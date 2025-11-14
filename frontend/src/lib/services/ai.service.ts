@@ -4,7 +4,7 @@
  * Handles AI prompt generation using Supabase Edge Functions
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 export interface GeneratePromptParams {
   goal: string;
@@ -37,7 +37,7 @@ export interface GeneratePromptResponse {
 
 export class AIService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**

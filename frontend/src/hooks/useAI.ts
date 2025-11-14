@@ -6,11 +6,8 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { testsService } from "@/lib/services/tests.service";
-import {
-  aiService,
-  type GeneratePromptParams,
-} from "@/lib/services/ai.service";
-import { useUserId } from "./useAuth";
+import { generate_prompt, type GeneratePromptParams } from "@/lib/api/ai";
+import { useUserId } from "@/hooks/auth/useAuth";
 
 /**
  * Generate a prompt using AI based on user requirements
@@ -19,8 +16,7 @@ import { useUserId } from "./useAuth";
  */
 export function useGeneratePromptMutation() {
   return useMutation({
-    mutationFn: (params: GeneratePromptParams) =>
-      aiService.generatePrompt(params),
+    mutationFn: (params: GeneratePromptParams) => generate_prompt(params),
   });
 }
 

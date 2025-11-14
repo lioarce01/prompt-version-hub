@@ -65,7 +65,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
     useGenerateTestCasesMutation();
   const { mutateAsync: runTests, isPending: isRunning } = useRunTestsMutation();
 
-  const promptVariables = useMemo(() => (suite?.prompt?.variables as string[]) ?? [], [suite]);
+  const promptVariables = useMemo(() => ((suite?.prompt as any)?.variables as string[]) ?? [], [suite]);
 
   const handleCreateCase = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -368,7 +368,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <div>
               <p className="font-medium text-foreground">Active version</p>
-              <p>v{suite.prompt?.version || 'N/A'}</p>
+              <p>v{(suite.prompt as any)?.version || 'N/A'}</p>
             </div>
             <div>
               <p className="font-medium text-foreground">Variables</p>
@@ -387,7 +387,7 @@ export function TestSuitePanel({ promptName }: TestSuitePanelProps) {
             <div>
               <p className="font-medium text-foreground">Template</p>
               <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border/60 bg-background/40 p-3 text-xs leading-relaxed">
-                {suite.prompt?.template || 'N/A'}
+                {(suite.prompt as any)?.template || 'N/A'}
               </pre>
             </div>
           </CardContent>

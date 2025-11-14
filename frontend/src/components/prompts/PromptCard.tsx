@@ -14,7 +14,7 @@ import {
 import { MoreVertical, Edit, Trash2, Eye, GitBranch, Copy } from "lucide-react";
 import type { Prompt } from "@/types/prompts";
 import { useRole } from "@/hooks/useRole";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { cn } from "@/lib/utils";
 
 interface PromptCardProps {

@@ -37,7 +37,7 @@ import {
   formatChartDate,
   formatChartMonth,
 } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export default function DashboardPage() {
   // IMPORTANT: All hooks must be called before any early returns (Rules of Hooks)
@@ -192,9 +192,10 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="h-[320px]">
-            {usageChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={usageChartData}>
+            <div className="h-full w-full">
+              {usageChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={usageChartData}>
                   <CartesianGrid stroke="#222" strokeDasharray="3 3" />
                   <XAxis dataKey="week" stroke="#666" />
                   <YAxis stroke="#666" />
@@ -222,12 +223,13 @@ export default function DashboardPage() {
                     dot={false}
                   />
                 </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No usage data available
-              </div>
-            )}
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No usage data available
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -242,9 +244,10 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="h-[320px]">
-            {velocityChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={velocityChartData}>
+            <div className="h-full w-full">
+              {velocityChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={velocityChartData}>
                   <CartesianGrid stroke="#222" strokeDasharray="3 3" />
                   <XAxis dataKey="month" stroke="#666" />
                   <YAxis stroke="#666" />
@@ -264,12 +267,13 @@ export default function DashboardPage() {
                     activeBar={{ fill: "#7c3aed" }}
                   />
                 </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                No version data available
-              </div>
-            )}
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No version data available
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -287,8 +291,8 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4 max-h-[294px] overflow-y-auto pr-2 scrollbar-slim">
-            {topPrompts?.items && topPrompts.items.length > 0 ? (
-              topPrompts.items.map((prompt: any, index: number) => (
+            {topPrompts && topPrompts.length > 0 ? (
+              topPrompts.map((prompt: any, index: number) => (
                 <div
                   key={`${prompt.name}-${index}`}
                   className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3"

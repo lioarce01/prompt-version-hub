@@ -4,7 +4,7 @@
  * Handles test case and test run operations
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import type { Database } from "../supabase/types";
 
 type TestCase = Database["public"]["Tables"]["test_cases"]["Row"];
@@ -32,7 +32,7 @@ export interface RunTestsParams {
 
 export class TestsService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**

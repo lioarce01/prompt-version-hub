@@ -35,21 +35,24 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.1.13
         version: 1.1.13(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@reduxjs/toolkit':
-        specifier: ^2.9.0
-        version: 2.10.1(react-redux@9.2.0(@types/react@19.2.2)(react@19.1.0)(redux@5.0.1))(react@19.1.0)
       '@supabase/ssr':
         specifier: ^0.7.0
         version: 0.7.0(@supabase/supabase-js@2.81.0)
       '@supabase/supabase-js':
         specifier: ^2.80.0
         version: 2.81.0
+      '@tanstack/query-sync-storage-persister':
+        specifier: ^5.90.10
+        version: 5.90.10
       '@tanstack/react-query':
-        specifier: ^5.90.7
-        version: 5.90.7(react@19.1.0)
+        specifier: ^5.90.8
+        version: 5.90.8(react@19.1.0)
       '@tanstack/react-query-devtools':
         specifier: ^5.90.2
-        version: 5.90.2(@tanstack/react-query@5.90.7(react@19.1.0))(react@19.1.0)
+        version: 5.90.2(@tanstack/react-query@5.90.8(react@19.1.0))(react@19.1.0)
+      '@tanstack/react-query-persist-client':
+        specifier: ^5.90.10
+        version: 5.90.10(@tanstack/react-query@5.90.8(react@19.1.0))(react@19.1.0)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -77,15 +80,9 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
-      react-redux:
-        specifier: ^9.2.0
-        version: 9.2.0(@types/react@19.2.2)(react@19.1.0)(redux@5.0.1)
       recharts:
         specifier: ^3.2.1
         version: 3.4.1(@types/react@19.2.2)(react-dom@19.1.0(react@19.1.0))(react-is@19.2.0)(react@19.1.0)(redux@5.0.1)
-      redux-persist:
-        specifier: ^6.0.0
-        version: 6.0.0(react@19.1.0)(redux@5.0.1)
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -947,11 +944,17 @@ packages:
   '@tailwindcss/postcss@4.1.17':
     resolution: {integrity: sha512-+nKl9N9mN5uJ+M7dBOOCzINw94MPstNR/GtIhz1fpZysxL/4a+No64jCBD6CPN+bIHWFx3KWuu8XJRrj/572Dw==}
 
-  '@tanstack/query-core@5.90.7':
-    resolution: {integrity: sha512-6PN65csiuTNfBMXqQUxQhCNdtm1rV+9kC9YwWAIKcaxAauq3Wu7p18j3gQY3YIBJU70jT/wzCCZ2uqto/vQgiQ==}
+  '@tanstack/query-core@5.90.8':
+    resolution: {integrity: sha512-4E0RP/0GJCxSNiRF2kAqE/LQkTJVlL/QNU7gIJSptaseV9HP6kOuA+N11y4bZKZxa3QopK3ZuewwutHx6DqDXQ==}
 
   '@tanstack/query-devtools@5.90.1':
     resolution: {integrity: sha512-GtINOPjPUH0OegJExZ70UahT9ykmAhmtNVcmtdnOZbxLwT7R5OmRztR5Ahe3/Cu7LArEmR6/588tAycuaWb1xQ==}
+
+  '@tanstack/query-persist-client-core@5.91.7':
+    resolution: {integrity: sha512-MKJmuHl4LIl3Zs91fL9CQx1XJ8//1bnq8keY5V+cv3SLkPM6Wqx/HYFBcevfFFrzo9TDHob9ivuM4UOGTyQ7Mg==}
+
+  '@tanstack/query-sync-storage-persister@5.90.10':
+    resolution: {integrity: sha512-t4zh6W6tZ5qkO68poL0d/8Gd4UPWvzM5PpO6/X4mXIzLe/DFdaaLyBlx3Un6oEEmZ9AHaTfFuVHIPmvX/BpH9g==}
 
   '@tanstack/react-query-devtools@5.90.2':
     resolution: {integrity: sha512-vAXJzZuBXtCQtrY3F/yUNJCV4obT/A/n81kb3+YqLbro5Z2+phdAbceO+deU3ywPw8B42oyJlp4FhO0SoivDFQ==}
@@ -959,8 +962,14 @@ packages:
       '@tanstack/react-query': ^5.90.2
       react: ^18 || ^19
 
-  '@tanstack/react-query@5.90.7':
-    resolution: {integrity: sha512-wAHc/cgKzW7LZNFloThyHnV/AX9gTg3w5yAv0gvQHPZoCnepwqCMtzbuPbb2UvfvO32XZ46e8bPOYbfZhzVnnQ==}
+  '@tanstack/react-query-persist-client@5.90.10':
+    resolution: {integrity: sha512-xLAB3W01LGGWLPFD9dKNcl0dWyBU6mPJGyZt6SbkwyuCgHSaKz8sGQ83ryWfn1u/h3nkCOBSXnOTFCLYtMvWeg==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.90.8
+      react: ^18 || ^19
+
+  '@tanstack/react-query@5.90.8':
+    resolution: {integrity: sha512-/3b9QGzkf4rE5/miL6tyhldQRlLXzMHcySOm/2Tm2OLEFE9P1ImkH0+OviDBSvyAvtAOJocar5xhd7vxdLi3aQ==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -1306,15 +1315,6 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-is: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  redux-persist@6.0.0:
-    resolution: {integrity: sha512-71LLMbUq2r02ng2We9S215LtPu3fY0KgaGE0k8WRgl6RkqxtGfl7HUozz1Dftwsb0D/5mZ8dwAaPbtnzfvbEwQ==}
-    peerDependencies:
-      react: '>=16'
-      redux: '>4.0.0'
-    peerDependenciesMeta:
-      react:
-        optional: true
 
   redux-thunk@3.1.0:
     resolution: {integrity: sha512-NW2r5T6ksUKXCabzhL9z+h206HQw/NJkcLm1GPImRQ8IzfXwRGqjVhKJGauHirT0DAuyy6hjdnMZaRoAcy0Klw==}
@@ -2153,19 +2153,34 @@ snapshots:
       postcss: 8.5.6
       tailwindcss: 4.1.17
 
-  '@tanstack/query-core@5.90.7': {}
+  '@tanstack/query-core@5.90.8': {}
 
   '@tanstack/query-devtools@5.90.1': {}
 
-  '@tanstack/react-query-devtools@5.90.2(@tanstack/react-query@5.90.7(react@19.1.0))(react@19.1.0)':
+  '@tanstack/query-persist-client-core@5.91.7':
+    dependencies:
+      '@tanstack/query-core': 5.90.8
+
+  '@tanstack/query-sync-storage-persister@5.90.10':
+    dependencies:
+      '@tanstack/query-core': 5.90.8
+      '@tanstack/query-persist-client-core': 5.91.7
+
+  '@tanstack/react-query-devtools@5.90.2(@tanstack/react-query@5.90.8(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@tanstack/query-devtools': 5.90.1
-      '@tanstack/react-query': 5.90.7(react@19.1.0)
+      '@tanstack/react-query': 5.90.8(react@19.1.0)
       react: 19.1.0
 
-  '@tanstack/react-query@5.90.7(react@19.1.0)':
+  '@tanstack/react-query-persist-client@5.90.10(@tanstack/react-query@5.90.8(react@19.1.0))(react@19.1.0)':
     dependencies:
-      '@tanstack/query-core': 5.90.7
+      '@tanstack/query-persist-client-core': 5.91.7
+      '@tanstack/react-query': 5.90.8(react@19.1.0)
+      react: 19.1.0
+
+  '@tanstack/react-query@5.90.8(react@19.1.0)':
+    dependencies:
+      '@tanstack/query-core': 5.90.8
       react: 19.1.0
 
   '@types/d3-array@3.2.2': {}
@@ -2462,12 +2477,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
       - redux
-
-  redux-persist@6.0.0(react@19.1.0)(redux@5.0.1):
-    dependencies:
-      redux: 5.0.1
-    optionalDependencies:
-      react: 19.1.0
 
   redux-thunk@3.1.0(redux@5.0.1):
     dependencies:

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Sidebar } from "@/components/layout/Sidebar";
 
 const collapsedWidth = 88;
@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isLoading, router]);
 
   // Show loading state while checking auth
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -35,6 +35,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  // Don't render anything if not authenticated - let the redirect happen
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (

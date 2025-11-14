@@ -4,7 +4,7 @@
  * Handles all A/B testing operations using Supabase
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import type { Database } from "../supabase/types";
 
 type ABPolicy = Database["public"]["Tables"]["ab_policies"]["Row"];
@@ -24,7 +24,7 @@ export interface AssignVariantParams {
 
 export class ABService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**

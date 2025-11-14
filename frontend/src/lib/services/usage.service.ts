@@ -4,7 +4,7 @@
  * Handles usage tracking and analytics
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import type { Database } from "../supabase/types";
 
 type UsageEvent = Database["public"]["Tables"]["usage_events"]["Row"];
@@ -20,7 +20,7 @@ export interface RecordUsageParams {
 
 export class UsageService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**

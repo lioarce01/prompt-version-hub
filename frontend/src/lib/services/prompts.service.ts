@@ -4,7 +4,7 @@
  * Handles all prompt-related operations using Supabase
  */
 
-import { getSupabaseBrowserClient } from "../supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import type { Database } from "../supabase/types";
 
 type Prompt = Database["public"]["Tables"]["prompts"]["Row"];
@@ -39,7 +39,7 @@ export interface ListPromptsParams {
 
 export class PromptsService {
   private get supabase(): any {
-    return getSupabaseBrowserClient();
+    return createClient();
   }
 
   /**
